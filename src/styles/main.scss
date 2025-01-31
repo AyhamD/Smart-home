@@ -1,0 +1,52 @@
+// src/styles/main.scss
+@use 'variables' as *;
+@use 'header' as *;
+@use 'Images' as *;
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui;
+  background: $background;
+  color: $text-primary;
+}
+
+.app {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100vh;
+}
+
+.main-content {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 2rem;
+  padding: 2rem;
+
+  @include tablet {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 400px;
+  }
+}
+
+.groups-wrapper {
+  display: grid;
+  gap: 1.5rem;
+  align-content: start;
+  overflow-y: auto;
+}
+
+.loading, .error {
+  padding: 2rem;
+  text-align: center;
+  font-size: 1.2rem;
+}
+
+.error {
+  color: $error;
+}
+

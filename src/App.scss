@@ -1,0 +1,119 @@
+// src/styles/app.scss
+@use 'styles/variables' as *;
+@use 'styles/main' as *;
+
+.app-container {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100vh;
+  background: $background;
+}
+
+.main-content {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 2rem;
+  padding: 2rem;
+  height: calc(100vh - 80px);
+
+  @include tablet {
+    grid-template-columns: 320px 2fr;
+    grid-template-rows: 2fr;
+  }
+}
+
+.groups-panel {
+  display: grid;
+  gap: 1.5rem;
+  align-content: start;
+  overflow-y: auto;
+  padding-right: 1rem;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba($primary, 0.1);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba($primary, 0.3);
+    border-radius: 4px;
+  }
+}
+
+.group-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1rem;
+  align-items: center;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $card-shadow;
+  }
+
+  &.active {
+    border: 2px solid $primary;
+    background: rgba($primary, 0.05);
+  }
+
+  .lamp-icon {
+    font-size: 2rem;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: all 0.2s;
+
+    &.on {
+      color: #ffd700;
+      background: rgba(black, 0.1);
+    }
+
+    &.off {
+      color: #666;
+      background: rgba(black, 0.05);
+    }
+  }
+
+  .group-name {
+    margin: 0;
+    font-weight: 600;
+    color: $text-primary;
+  }
+
+  .group-meta {
+    margin: 0.5rem 0 0;
+    font-size: 0.9rem;
+    color: rgba($text-primary, 0.7);
+    display: flex;
+    gap: 1rem;
+
+    .group-type {
+      text-transform: capitalize;
+    }
+  }
+}
+
+.visualization-panel {
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: $card-shadow;
+  background: black;
+}
+
+.loading-screen, .error-screen {
+  display: grid;
+  place-items: center;
+  height: 100vh;
+  font-size: 1.5rem;
+  
+  &.error-screen {
+    color: $error;
+  }
+}
