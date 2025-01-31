@@ -37,7 +37,7 @@ const Header = () => {
         (position) => {
           fetchWeather(position.coords.latitude, position.coords.longitude);
         },
-        (err) => {
+        () => {
           setError('Location access denied');
         }
       );

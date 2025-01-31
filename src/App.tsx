@@ -4,16 +4,15 @@ import axios from "axios";
 import "./App.scss";
 import GroupCard from "./Component/GroupCard/GroupCard";
 import Header from "./Component/Header/Header";
-import { LightDetail } from "./Component/LightDetail/LightDetail";
+// import { LightDetail } from "./Component/LightDetail/LightDetail";
 import useHue from "./Hooks/UseHue";
 import { LightGroup } from "./types";
-import ImageCarousel from "./Component/ImageCarousel/ImageCarousel";
 import ImageUploader from "./Component/ImageUploader/ImageUploader";
 
 const App = () => {
   const { lights, groups, loading, error, refreshData } = useHue();
-  const [selectedGroup, setSelectedGroup] = useState<LightGroup | null>(null);
-  const [city, setCity] = useState<string | null>(null);
+  const [, setSelectedGroup] = useState<LightGroup | null>(null);
+  // const [city, setCity] = useState<string | null>(null);
   const [userImages, setUserImages] = useState<string[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -26,19 +25,19 @@ const App = () => {
     return () => clearInterval(timer);
   }, [userImages.length]);
 
-  const handleBrightnessChange = async (lightId: string, bri: number) => {
-    try {
-      await axios.put(
-        `http://${import.meta.env.VITE_HUE_BRIDGE_IP}/api/${
-          import.meta.env.VITE_HUE_USERNAME
-        }/lights/${lightId}/state`,
-        { bri }
-      );
-      refreshData();
-    } catch (err) {
-      console.error("Brightness update failed:", err);
-    }
-  };
+  // const handleBrightnessChange = async (lightId: string, bri: number) => {
+  //   try {
+  //     await axios.put(
+  //       `http://${import.meta.env.VITE_HUE_BRIDGE_IP}/api/${
+  //         import.meta.env.VITE_HUE_USERNAME
+  //       }/lights/${lightId}/state`,
+  //       { bri }
+  //     );
+  //     refreshData();
+  //   } catch (err) {
+  //     console.error("Brightness update failed:", err);
+  //   }
+  // };
 
   // Add missing handleGroupToggle function
   const handleGroupToggle = async (groupId: string) => {

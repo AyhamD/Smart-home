@@ -1,5 +1,4 @@
 // src/components/ImageUploader.tsx
-import { useState } from "react";
 import { FaCirclePlus } from "react-icons/fa6";
 
 type ImageUploaderProps = {
