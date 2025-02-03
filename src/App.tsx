@@ -6,8 +6,10 @@ import GroupCard from "./Component/GroupCard/GroupCard";
 import Header from "./Component/Header/Header";
 // import { LightDetail } from "./Component/LightDetail/LightDetail";
 import useHue from "./Hooks/UseHue";
-import { LightGroup } from "./types";
+import { HueBridgeConfig, LightGroup } from "./types";
 import ImageUploader from "./Component/ImageUploader/ImageUploader";
+import { HueBridgeManager } from "./services/hue-bridage-manager";
+import BridgeCard from "./Component/BridgeCard";
 
 const App = () => {
   const { lights, groups, loading, error, refreshData } = useHue();
@@ -15,15 +17,18 @@ const App = () => {
   // const [city, setCity] = useState<string | null>(null);
   const [userImages, setUserImages] = useState<string[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [bridges, setBridges] = useState<HueBridgeConfig[]>([]);
+  const [manager] = useState(() => new HueBridgeManager());
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentImageIndex((prev) =>
         userImages.length > 0 ? (prev + 1) % userImages.length : 0
       );
+      manager.discoverBridges().then(setBridges);
     }, 5000);
     return () => clearInterval(timer);
-  }, [userImages.length]);
+  }, [userImages.length, manager]);
 
   // const handleBrightnessChange = async (lightId: string, bri: number) => {
   //   try {
@@ -77,7 +82,18 @@ const App = () => {
   return (
     <div className="app-container">
       <Header />
-
+      <div className="bridge-discovery">
+        <h1>Connect to Hue Bridge</h1>
+        <div className="bridge-list">
+          {bridges.map((bridge) => (
+            <BridgeCard
+              key={bridge.id}
+              bridge={bridge}
+              onConnect={() => manager.authenticateBridge(bridge.ip)}
+            />
+          ))}
+        </div>
+      </div>
       <div className="main-content">
         <div className="groups-panel">
           {groups.map((group) => (
@@ -92,7 +108,7 @@ const App = () => {
         </div>
 
         <div className="controls-section">
-        <ImageUploader onImagesSelected={setUserImages} />
+          <ImageUploader onImagesSelected={setUserImages} />
           <div className="image-carousel">
             {userImages.length > 0 ? (
               userImages.map((img, index) => (

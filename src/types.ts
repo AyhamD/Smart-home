@@ -41,3 +41,11 @@ export interface WeatherData {
   temp: number;
   condition: string;
 };
+
+export interface HueBridgeConfig {
+  id: string;
+  ip: string;
+  username?: string;
+  friendlyName: string;
+  lastConnected: Date;
+}
