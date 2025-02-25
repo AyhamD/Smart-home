@@ -1,30 +1,16 @@
 // src/components/ImageUploader.tsx
-import { FaCirclePlus } from "react-icons/fa6";
+import React, { ChangeEvent } from 'react';
+import { FaCirclePlus } from 'react-icons/fa6';
+import { ImageUploaderProps } from '../../types';
 
-type ImageUploaderProps = {
-  onImagesSelected: (images: string[]) => void;
-};
+const ImageUploader: React.FC<ImageUploaderProps> = ({onImagesSelected }) => {
 
-const ImageUploader = ({ onImagesSelected }: ImageUploaderProps) => {
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-
-    const imageArray: string[] = [];
-
-    Array.from(files).forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        if (e.target?.result) {
-          imageArray.push(e.target.result as string);
-          if (imageArray.length === files.length) {
-            onImagesSelected(imageArray);
-          }
-        }
-      };
-      reader.readAsDataURL(file);
-    });
+  const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      const files = Array.from(event.target.files);
+      const imageUrls = files.map((file) => URL.createObjectURL(file));
+      onImagesSelected (imageUrls);
+    }
   };
 
   return (

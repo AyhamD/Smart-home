@@ -3,7 +3,11 @@
 @use 'header' as *;
 @use 'images' as *;
 @use 'modal' as *;
-
+@use 'bridge' as *;
+@use 'groupDetail' as *;
+@use 'colorPicker' as *;
+@use 'light' as *;
+@use 'dashboard' as *;
 
 * {
   box-sizing: border-box;

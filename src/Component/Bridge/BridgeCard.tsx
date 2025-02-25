@@ -1,4 +1,4 @@
-import { HueBridgeConfig } from '../types';
+import { HueBridgeConfig } from "../../types";
 
 type BridgeCardProps = {
   bridge: HueBridgeConfig;

@@ -1,0 +1,44 @@
+// src/styles/_lights.scss
+@use 'variables' as *;
+
+.lights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    padding: 2rem;
+  
+    @include mobile {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  .light-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: $card-shadow;
+  
+    &__color {
+      height: 120px;
+      background: #ccc;
+      transition: background 0.3s ease;
+    }
+  
+    &__controls {
+      padding: 1.5rem;
+  
+      h3 {
+        margin-bottom: 1rem;
+      }
+    }
+  
+    .brightness-control {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+  
+      input[type="range"] {
+        flex: 1;
+      }
+    }
+  }

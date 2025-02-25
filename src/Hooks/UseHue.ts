@@ -35,8 +35,23 @@ const useHue = () => {
       return Object.entries(response.data).map(([id, group]) => ({
         id,
         name: group.name || 'Unnamed Group',
-        lights: group.lights || [], // Ensure array exists
-        type: group.type || 'LightGroup'
+        lights: group.lights || [],
+        type: group.type || 'LightGroup',
+        state: {
+          all_on: group.state.all_on || false,
+          any_on: group.state.any_on || false
+        },
+        action: {
+          on: group.action.on || false,
+          bri: group.action.bri || 254,
+          hue: group.action.hue || 0,
+          sat: group.action.sat || 0,
+          effect: group.action.effect || 'none',
+          xy: group.action.xy || [0, 0],
+          ct: group.action.ct || 0,
+          alert: group.action.alert || 'none',
+          colormode: group.action.colormode || 'none'
+        }
       }));
     } catch (err) {
       throw new Error('Failed to fetch groups');

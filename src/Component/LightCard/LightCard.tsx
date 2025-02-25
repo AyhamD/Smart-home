@@ -1,20 +1,48 @@
-// // src/components/LightCard/LightCard.tsx
-// import { Light } from '../../types';
+import React from "react";
+import { FaLightbulb } from "react-icons/fa";
 
-// type LightCardProps = {
-//   light: Light;
-//   onToggle: (lightId: string, currentState: LightState) => void;
-// };
+interface LightCardProps {
+  light: any;
+  onToggle: () => void;
+  onBrightnessChange: (brightness: number) => void;
+}
 
-// export const LightCard = ({ light, onToggle }: LightCardProps) => (
-//   <div className="light-card">
-//     <h2>{light.name}</h2>
-//     <p>Status: {light.state.on ? 'ON' : 'OFF'}</p>
-//     <button
-//       onClick={() => onToggle(light.id, light.state)}
-//       className={light.state.on ? 'on' : 'off'}
-//     >
-//       {light.state.on ? 'Turn Off' : 'Turn On'}
-//     </button>
-//   </div>
-// );
+const LightCard: React.FC<LightCardProps> = ({
+  light,
+  onToggle,
+  onBrightnessChange,
+}) => {
+  return (
+    <div className="light-card">
+      <div className="light-info">
+        <h3>{light.name}</h3>
+        <div className="card-interactions">
+          <div
+            className={`light-card-button`}
+            role="button"
+            tabIndex={0}
+          ></div>
+          <FaLightbulb
+            className={`lamp-icon ${light.state.on ? "on" : "off"}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggle();
+            }}
+          />
+        </div>
+      </div>
+      <div className="light-controls">
+        <input
+          type="range"
+          min="0"
+          max="254"
+          value={light.state.bri}
+          onChange={(e) => onBrightnessChange(+e.target.value)}
+        />
+        <span>{Math.round((light.state.bri / 254) * 100)}%</span>
+      </div>
+    </div>
+  );
+};
+
+export default LightCard;

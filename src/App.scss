@@ -64,22 +64,7 @@
     background: rgba($primary, 0.05);
   }
 
-  .lamp-icon {
-    font-size: 2rem;
-    padding: 0.5rem;
-    border-radius: 50%;
-    transition: all 0.2s;
 
-    &.on {
-      color: #ffd700;
-      background: rgba(black, 0.1);
-    }
-
-    &.off {
-      color: #666;
-      background: rgba(black, 0.05);
-    }
-  }
 
   .group-name {
     margin: 0;
@@ -97,6 +82,27 @@
     .group-type {
       text-transform: capitalize;
     }
+  }
+}
+
+.light-card-button{
+  display: none;
+}
+
+.lamp-icon {
+  font-size: 2rem;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: all 0.2s;
+
+  &.on {
+    color: #ffd700;
+    background: rgba(black, 0.1);
+  }
+
+  &.off {
+    color: #666;
+    background: rgba(black, 0.05);
   }
 }
 

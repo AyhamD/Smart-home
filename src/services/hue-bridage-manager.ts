@@ -55,6 +55,7 @@ export class HueBridgeManager {
       document.body.appendChild(modal);
     });
   }
+  
   async discoverBridges(): Promise<HueBridgeConfig[]> {
     try {
       // Use Philips Hue's official discovery endpoint
@@ -102,15 +103,40 @@ export class HueBridgeManager {
     }
     this.saveToStorage();
   }
-
-  private async promptLinkButton(): Promise<boolean> {
-    // Implement UI modal for link button press
+  async promptLinkButton(): Promise<boolean> {
     return new Promise((resolve) => {
-      this.showModal({
-        title: "Press Link Button",
-        message: "Please press the link button on your Hue Bridge",
-        confirmText: "I pressed it",
+      const modalContainer = document.createElement('div');
+      modalContainer.innerHTML = `
+        <div class="link-button-modal">
+          <div class="modal-content">
+            <h2>Press Link Button</h2>
+            <p>Please press the link button on your Hue Bridge within 30 seconds</p>
+            <div class="button-group">
+              <button id="confirm">I Pressed It</button>
+              <button id="cancel">Cancel</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const confirm = modalContainer.querySelector('#confirm');
+      const cancel = modalContainer.querySelector('#cancel');
+
+      const cleanup = () => {
+        document.body.removeChild(modalContainer);
+      };
+
+      confirm?.addEventListener('click', () => {
+        cleanup();
+        resolve(true);
       });
+
+      cancel?.addEventListener('click', () => {
+        cleanup();
+        resolve(false);
+      });
+
+      document.body.appendChild(modalContainer);
     });
   }
 
