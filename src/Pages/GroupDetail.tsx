@@ -4,7 +4,7 @@ import { useParams, useNavigate } from "react-router";
 import Header from "../Component/Header/Header";
 import { motion } from "framer-motion";
 import ColorPicker from "../Component/ColorPicker/ColorPicker";
-import LightCard from "../Component/lightCard/lightCard";
+import LightCard from "../Component/LightCard/LightCard";
 
 const GroupDetail = () => {
   const { groupId } = useParams();
