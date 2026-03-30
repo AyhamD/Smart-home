@@ -71,7 +71,7 @@ const Dashboard = () => {
   };
 
   const OpenLights = (groupId: string) => {
-    navigate(`/hue-control/lights/${groupId}`);
+    navigate(`/lights/${groupId}`);
   };
 
   const isGroupActive = (group: LightGroup) => {
@@ -88,16 +88,17 @@ const Dashboard = () => {
     return lights.filter(l => l.state.on).length;
   };
 
-  if (loading || checkingNetwork) {
+  // Show loading only when checking network status
+  if (checkingNetwork) {
     return (
       <div className="loading-screen">
         <div className="loading-spinner"></div>
-        <p>{checkingNetwork ? 'Checking network...' : 'Connecting to Hue Bridge...'}</p>
+        <p>Checking network...</p>
       </div>
     );
   }
 
-  // When not at home, only show grocery list
+  // When not at home, only show grocery list (don't wait for Hue)
   if (!isAtHome) {
     return (
       <div className="dashboard-container away-mode">
@@ -105,6 +106,16 @@ const Dashboard = () => {
         <div className="dashboard-content">
           <GroceryList />
         </div>
+      </div>
+    );
+  }
+
+  // At home - wait for Hue to load
+  if (loading) {
+    return (
+      <div className="loading-screen">
+        <div className="loading-spinner"></div>
+        <p>Connecting to Hue Bridge...</p>
       </div>
     );
   }

@@ -250,7 +250,7 @@ const GroupDetail = () => {
 
   return (
     <motion.div className="group-detail">
-      <Header showBackButton onBack={() => navigate("/hue-control")} />
+      <Header showBackButton onBack={() => navigate("/")} />
 
       <div className="group-controls">
         <motion.div className="color-control-card">

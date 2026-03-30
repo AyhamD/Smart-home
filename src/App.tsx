@@ -19,10 +19,10 @@ const App = () => {
           <GroceryProvider>
             <BrowserRouter>
               <Routes>
-                <Route path="/hue-control" element={<Dashboard />} />
-                <Route path="/hue-control/setup" element={<BridgeSetup />} />
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/setup" element={<BridgeSetup />} />
                 <Route
-                  path="/hue-control/lights/:groupId"
+                  path="/lights/:groupId"
                   element={<GroupDetail />}
                 />
               </Routes>
