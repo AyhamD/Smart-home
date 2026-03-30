@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { HueBridgeManager } from "../services/hue-bridage-manager";
-import { HueBridgeConfig } from "../types";
+import { HueBridgeManager } from "../../services/hue-bridage-manager";
+import { HueBridgeConfig } from "../../types";
 
 // src/components/BridgeSelector.tsx
 export const BridgeSelector = () => {

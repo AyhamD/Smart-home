@@ -21,40 +21,6 @@ export class HueBridgeManager {
         index === self.findIndex((b) => b.id === bridge.id)
     );
   }
-
-  private async showModal(options: {
-    title: string;
-    message: string;
-    confirmText?: string;
-  }): Promise<boolean> {
-    return new Promise((resolve) => {
-      // Create modal elements
-      const modal = document.createElement("div");
-      modal.className = "link-button-modal";
-
-      modal.innerHTML = `
-            <div class="modal-content">
-              <h2>${options.title}</h2>
-              <p>${options.message}</p>
-              <button id="confirm">I pressed it</button>
-              <button id="cancel">Cancel</button>
-            </div>
-          `;
-
-      // Handle events
-      modal.querySelector("#confirm")?.addEventListener("click", () => {
-        document.body.removeChild(modal);
-        resolve(true);
-      });
-
-      modal.querySelector("#cancel")?.addEventListener("click", () => {
-        document.body.removeChild(modal);
-        resolve(false);
-      });
-
-      document.body.appendChild(modal);
-    });
-  }
   
   async discoverBridges(): Promise<HueBridgeConfig[]> {
     try {

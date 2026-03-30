@@ -8,6 +8,7 @@
 @use 'colorPicker' as *;
 @use 'light' as *;
 @use 'dashboard' as *;
+@use 'grocery' as *;
 
 * {
   box-sizing: border-box;
@@ -16,22 +17,60 @@
 }
 
 body {
-  font-family: 'Segoe UI', system-ui;
-  background: $background;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  background: $gradient-background;
   color: $text-primary;
+  min-height: 100vh;
+  overflow-x: hidden;
+  
+  // Animated background particles
+  &::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: $gradient-glow;
+    pointer-events: none;
+    z-index: -1;
+    animation: pulse-glow 8s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.1); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px rgba($primary, 0.3); }
+  50% { box-shadow: 0 0 40px rgba($primary, 0.5), 0 0 60px rgba($primary, 0.3); }
 }
 
 .app {
   display: grid;
   grid-template-rows: auto 1fr;
-  height: 100vh;
+  min-height: 100vh;
+  position: relative;
 }
 
 .main-content {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: 1fr 400px;
   gap: 2rem;
   padding: 2rem;
+  position: relative;
 
   @include tablet {
     grid-template-columns: 1fr;
@@ -44,6 +83,26 @@ body {
   gap: 1.5rem;
   align-content: start;
   overflow-y: auto;
+  padding-right: 0.5rem;
+  
+  // Custom scrollbar
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba($primary, 0.5);
+    border-radius: 3px;
+    
+    &:hover {
+      background: rgba($primary, 0.7);
+    }
+  }
 }
 
 .loading, .error {

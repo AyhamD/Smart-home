@@ -5,7 +5,6 @@ import Header from "../Component/Header/Header";
 import { motion } from "framer-motion";
 import ColorPicker from "../Component/ColorPicker/ColorPicker";
 import LightCard from "../Component/lightCard/lightCard";
-import PresetColors from "../Component/PresetColors/PresetColors";
 
 const GroupDetail = () => {
   const { groupId } = useParams();
@@ -35,19 +34,22 @@ const GroupDetail = () => {
             import.meta.env.VITE_HUE_USERNAME
           }/lights`
         );
+        // Show ALL lights in the group, not just reachable ones
         const lightsInGroup = groupRes.data.lights
           .map((lightId: string) => ({
             id: lightId,
             ...lightsRes.data[lightId],
           }))
-          .filter((light: any) => light.state?.reachable);
+          .filter((light: any) => light.name); // Only filter out invalid light IDs
 
         setGroup(groupRes.data);
         setGroupLights(lightsInGroup);
 
-        if (lightsInGroup.length > 0) {
-          const initialHue = lightsInGroup[0].state.hue || 0;
-          const initialSat = lightsInGroup[0].state.sat || 0;
+        // Use first reachable light for initial color
+        const reachableLight = lightsInGroup.find((l: any) => l.state?.reachable && l.state?.on);
+        if (reachableLight) {
+          const initialHue = reachableLight.state.hue || 0;
+          const initialSat = reachableLight.state.sat || 0;
           setColor({
             hsl: {
               h: (initialHue / 65535) * 360,
@@ -89,12 +91,13 @@ const GroupDetail = () => {
           import.meta.env.VITE_HUE_USERNAME
         }/lights`
       );
+      // Show ALL lights, not just reachable ones
       const lightsInGroup = groupRes.data.lights
         .map((lightId: string) => ({
           id: lightId,
           ...lightsRes.data[lightId],
         }))
-        .filter((light: any) => light.state?.reachable);
+        .filter((light: any) => light.name);
 
       setGroupLights(lightsInGroup);
     } catch (error) {
@@ -190,19 +193,6 @@ const GroupDetail = () => {
     });
   };
 
-  // Handle color change from ColorPicker
-  const handleColorChange = (
-    hsl: { h: number; s: number; l: number },
-    hex: string,
-    rgb: { r: number; g: number; b: number }
-  ) => {
-    setColor({ hsl, hex, rgb });
-    updateGroupLights({
-      hue: Math.round((hsl.h / 360) * 65535),
-      sat: Math.round((hsl.s / 100) * 254),
-    });
-  };
-
   const handleBrightnessChange = async (
     lightId: string,
     brightness: number
@@ -225,25 +215,6 @@ const GroupDetail = () => {
     } catch (error) {
       console.error("Brightness update failed:", error);
     }
-  };
-
-  const handleColorPreset = (hsl: { h: number; s: number; l: number }) => {
-    const hex = hslToHex(hsl.h, hsl.s, hsl.l);
-    const rgb = hslToRgb(hsl.h, hsl.s, hsl.l);
-    setColor({ hsl, hex, rgb });
-    updateGroupLights({
-      hue: Math.round((hsl.h / 360) * 65535),
-      sat: Math.round((hsl.s / 100) * 254)
-    });
-  };
-
-  const handleWhitePreset = (ct: number) => {
-    // Clear color settings and set white temperature
-    updateGroupLights({
-      ct,
-      hue: undefined,
-      sat: undefined
-    });
   };
 
   useEffect(() => {
@@ -373,12 +344,7 @@ const GroupDetail = () => {
           </div>
         </motion.div>
       </div>
-      <div className="color-control-card">
-          <PresetColors
-            onColorSelect={handleColorPreset}
-            onWhiteSelect={handleWhitePreset}
-          />
-        </div>          
+      
       {groupLights.length > 0 && (
         <div className="group-lights">
           {groupLights.map((light) => (
@@ -386,7 +352,7 @@ const GroupDetail = () => {
               key={light.id}
               onToggle={() => handleLightToggle(light.id)}
               light={light}
-              onBrightnessChange={(brightness) =>
+              onBrightnessChange={(brightness: number) =>
                 handleBrightnessChange(light.id, brightness)
               }
             />

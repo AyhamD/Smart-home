@@ -9,22 +9,25 @@ import { ImagesProvider } from "./context/ImageContext.tsx";
 import { WeatherProvider } from "./context/WeatherContext.tsx";
 import GroupDetail from "./Pages/GroupDetail.tsx";
 import { BluetoothProvider } from "./context/BluetoothContext.tsx";
+import { GroceryProvider } from "./context/GroceryContext.tsx";
 
 const App = () => {
   return (
     <WeatherProvider>
       <ImagesProvider>
         <BluetoothProvider>
-          <BrowserRouter>
-            <Routes>
-              <Route path="/hue-control" element={<Dashboard />} />
-              <Route path="/hue-control/setup" element={<BridgeSetup />} />
-              <Route
-                path="/hue-control/lights/:groupId"
-                element={<GroupDetail />}
-              />
-            </Routes>
-          </BrowserRouter>
+          <GroceryProvider>
+            <BrowserRouter>
+              <Routes>
+                <Route path="/hue-control" element={<Dashboard />} />
+                <Route path="/hue-control/setup" element={<BridgeSetup />} />
+                <Route
+                  path="/hue-control/lights/:groupId"
+                  element={<GroupDetail />}
+                />
+              </Routes>
+            </BrowserRouter>
+          </GroceryProvider>
         </BluetoothProvider>
       </ImagesProvider>
     </WeatherProvider>
