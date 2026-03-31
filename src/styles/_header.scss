@@ -194,71 +194,133 @@
       margin-top: 0.25rem;
     }
   }
-}
-
-// _groups.scss
-.groups-container {
-  padding: 2rem;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1.5rem;
-  overflow-y: auto;
-
+  
+  // Tablet responsive
   @include tablet {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: 1fr auto 1fr;
+    padding: 1rem 1.5rem;
+    min-height: 80px;
+    
+    .header-center {
+      .app-title {
+        font-size: 1.5rem;
+      }
+    }
+    
+    .weather-widget {
+      min-width: auto;
+      padding: 0.5rem 1rem;
+      
+      .weather-icon {
+        width: 48px;
+        height: 48px;
+      }
+      
+      .weather-details {
+        .weather-temp {
+          font-size: 1.5rem;
+        }
+        
+        .weather-condition {
+          font-size: 0.85rem;
+        }
+        
+        .weather-location {
+          font-size: 0.75rem;
+        }
+      }
+      
+      .weather-extra {
+        display: none;
+      }
+    }
+    
+    .datetime-widget {
+      padding: 0.5rem 1rem;
+      
+      .time {
+        font-size: 1.75rem;
+      }
+      
+      .date {
+        font-size: 0.85rem;
+      }
+    }
   }
-
+  
+  // Mobile responsive
   @include mobile {
-    grid-template-columns: 1fr;
-  }
-}
-
-.group-card {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  text-align: center;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: $card-shadow;
-  }
-
-  &.active {
-    border: 2px solid $primary;
-  }
-
-  .lamp-icon {
-    font-size: 2rem;
-    margin-bottom: 1rem;
-
-    &.on {
-      color: #ffd700;
+    grid-template-columns: auto 1fr auto;
+    padding: 0.75rem 1rem;
+    min-height: auto;
+    gap: 0.75rem;
+    
+    .header-left {
+      order: 1;
+      
+      .back-button {
+        width: 40px;
+        height: 40px;
+        padding: 0.75rem;
+        font-size: 1rem;
+      }
     }
-    &.off {
-      color: #666;
+    
+    .header-center {
+      order: 2;
+      
+      .app-title {
+        font-size: 1.1rem;
+      }
     }
-  }
-}
-
-// _carousel.scss
-.carousel-container {
-  position: relative;
-  height: 100%;
-  overflow: hidden;
-
-  .carousel-image {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    opacity: 0;
-    transition: opacity 1s ease-in-out;
-
-    &.active {
-      opacity: 1;
+    
+    .header-right {
+      order: 3;
+      
+      .weather-widget {
+        padding: 0.4rem 0.6rem;
+        min-width: auto;
+        gap: 0.5rem;
+        border-radius: 0.75rem;
+        
+        .weather-icon {
+          width: 32px;
+          height: 32px;
+        }
+        
+        .weather-details {
+          .weather-temp {
+            font-size: 1.1rem;
+          }
+          
+          .weather-condition,
+          .weather-location {
+            display: none;
+          }
+        }
+        
+        .weather-extra {
+          display: none;
+        }
+      }
+      
+      .datetime-widget {
+        padding: 0.4rem 0.6rem;
+        border-radius: 0.75rem;
+        
+        .time {
+          font-size: 1.2rem;
+        }
+        
+        .date {
+          display: none;
+        }
+      }
+    }
+    
+    // Hide bottom gradient on mobile
+    &::after {
+      height: 1px;
     }
   }
 }

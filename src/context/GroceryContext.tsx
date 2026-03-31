@@ -5,6 +5,7 @@ export interface GroceryItem {
   id: string;
   name: string;
   quantity: number;
+  price: number | null; // Price per item (null if not set)
   bought: boolean;
   createdAt: number;
 }
@@ -16,7 +17,6 @@ export interface GroceryWeek {
   startDate: string; // Monday
   endDate: string; // Saturday
   items: GroceryItem[];
-  totalSpent: number | null; // null means not set yet
 }
 
 export interface GroceryData {
@@ -26,11 +26,12 @@ export interface GroceryData {
 interface GroceryContextType {
   weeks: GroceryWeek[];
   currentWeek: GroceryWeek | null;
-  addItem: (name: string, quantity?: number) => void;
+  addItem: (name: string, quantity?: number, price?: number | null) => void;
   removeItem: (weekId: string, itemId: string) => void;
   toggleBought: (weekId: string, itemId: string) => void;
+  updateItemPrice: (weekId: string, itemId: string, price: number) => void;
   clearBought: (weekId: string) => void;
-  setTotalSpent: (weekId: string, amount: number) => void;
+  getWeekTotal: (weekId: string) => number;
   isAtHome: boolean;
   checkingNetwork: boolean;
   syncing: boolean;
@@ -85,7 +86,6 @@ const createWeekForDate = (date: Date): GroceryWeek => {
     startDate: formatShortDate(monday),
     endDate: formatShortDate(saturday),
     items: [],
-    totalSpent: null,
   };
 };
 
@@ -234,13 +234,14 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, []);
 
   // Add item to current week
-  const addItem = (name: string, quantity: number = 1) => {
+  const addItem = (name: string, quantity: number = 1, price: number | null = null) => {
     if (!name.trim()) return;
     
     const newItem: GroceryItem = {
       id: Date.now().toString(),
       name: name.trim(),
       quantity,
+      price,
       bought: false,
       createdAt: Date.now(),
     };
@@ -301,12 +302,27 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({ children })
     );
   };
 
-  const setTotalSpent = (weekId: string, amount: number) => {
+  const updateItemPrice = (weekId: string, itemId: string, price: number) => {
     setWeeks(prev =>
       prev.map(week =>
-        week.weekId === weekId ? { ...week, totalSpent: amount } : week
+        week.weekId === weekId
+          ? {
+              ...week,
+              items: week.items.map(item =>
+                item.id === itemId ? { ...item, price } : item
+              ),
+            }
+          : week
       )
     );
+  };
+
+  const getWeekTotal = (weekId: string): number => {
+    const week = weeks.find(w => w.weekId === weekId);
+    if (!week) return 0;
+    return week.items
+      .filter(item => item.bought && item.price !== null)
+      .reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
   };
 
   return (
@@ -317,8 +333,9 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({ children })
         addItem,
         removeItem,
         toggleBought,
+        updateItemPrice,
         clearBought,
-        setTotalSpent,
+        getWeekTotal,
         isAtHome,
         checkingNetwork,
         syncing,

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useGrocery, GroceryWeek } from '../../context/GroceryContext';
-import { FaShoppingCart, FaPlus, FaCheck, FaTrash, FaHome, FaWifi, FaSync, FaCalendarWeek, FaMoneyBillWave, FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { FaShoppingCart, FaPlus, FaCheck, FaTrash, FaHome, FaWifi, FaSync, FaCalendarWeek, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface WeekCardProps {
@@ -10,20 +10,22 @@ interface WeekCardProps {
 }
 
 const WeekCard: React.FC<WeekCardProps> = ({ week, isCurrentWeek, isAtHome }) => {
-  const { toggleBought, removeItem, clearBought, setTotalSpent } = useGrocery();
+  const { toggleBought, removeItem, clearBought, updateItemPrice, getWeekTotal } = useGrocery();
   const [expanded, setExpanded] = useState(isCurrentWeek);
-  const [editingTotal, setEditingTotal] = useState(false);
-  const [totalInput, setTotalInput] = useState(week.totalSpent?.toString() || '');
+  const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
+  const [priceInput, setPriceInput] = useState('');
 
   const unboughtItems = week.items.filter(item => !item.bought);
   const boughtItems = week.items.filter(item => item.bought);
+  const weekTotal = getWeekTotal(week.weekId);
 
-  const handleSaveTotal = () => {
-    const amount = parseFloat(totalInput);
+  const handleSavePrice = (itemId: string) => {
+    const amount = parseFloat(priceInput);
     if (!isNaN(amount) && amount >= 0) {
-      setTotalSpent(week.weekId, amount);
+      updateItemPrice(week.weekId, itemId, amount);
     }
-    setEditingTotal(false);
+    setEditingPriceId(null);
+    setPriceInput('');
   };
 
   return (
@@ -43,10 +45,10 @@ const WeekCard: React.FC<WeekCardProps> = ({ week, isCurrentWeek, isAtHome }) =>
         </div>
         <div className="week-summary">
           <div className="week-total">
-            {week.totalSpent !== null ? (
-              <span className="total-amount">€{week.totalSpent.toFixed(2)}</span>
+            {weekTotal > 0 ? (
+              <span className="total-amount">€{weekTotal?.toFixed(2)}</span>
             ) : (
-              <span className="total-pending">No total set</span>
+              <span className="total-pending">€0.00</span>
             )}
           </div>
           <span className="item-count">{week.items.length} items</span>
@@ -62,42 +64,6 @@ const WeekCard: React.FC<WeekCardProps> = ({ week, isCurrentWeek, isAtHome }) =>
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
           >
-            {/* Total spent input */}
-            <div className="total-spent-section">
-              <div className="total-label">
-                <FaMoneyBillWave />
-                <span>Total Spent This Week</span>
-              </div>
-              {editingTotal ? (
-                <div className="total-input-group">
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={totalInput}
-                    onChange={(e) => setTotalInput(e.target.value)}
-                    placeholder="0.00"
-                    className="total-input"
-                    autoFocus
-                  />
-                  <button className="save-total-btn" onClick={handleSaveTotal}>
-                    <FaCheck />
-                  </button>
-                </div>
-              ) : (
-                <button 
-                  className="edit-total-btn"
-                  onClick={() => {
-                    setTotalInput(week.totalSpent?.toString() || '');
-                    setEditingTotal(true);
-                  }}
-                  disabled={!isAtHome}
-                >
-                  {week.totalSpent !== null ? `€${week.totalSpent.toFixed(2)}` : 'Set total'}
-                </button>
-              )}
-            </div>
-
             {/* Items list */}
             <div className="grocery-items">
               {unboughtItems.length === 0 && boughtItems.length === 0 && (
@@ -174,6 +140,39 @@ const WeekCard: React.FC<WeekCardProps> = ({ week, isCurrentWeek, isAtHome }) =>
                         <span className="item-name">{item.name}</span>
                         {item.quantity > 1 && (
                           <span className="item-qty">x{item.quantity}</span>
+                        )}
+                      </div>
+                      <div className="item-price">
+                        {editingPriceId === item.id ? (
+                          <div className="price-input-group">
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={priceInput}
+                              onChange={(e) => setPriceInput(e.target.value)}
+                              placeholder="0.00"
+                              className="price-input"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSavePrice(item.id);
+                                if (e.key === 'Escape') { setEditingPriceId(null); setPriceInput(''); }
+                              }}
+                            />
+                            <button className="save-price-btn" onClick={() => handleSavePrice(item.id)}>
+                              <FaCheck />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            className="edit-price-btn"
+                            onClick={() => {
+                              setPriceInput(item.price?.toString() || '');
+                              setEditingPriceId(item.id);
+                            }}
+                          >
+                            {item.price !== null ? `€${item.price?.toFixed(2)}` : 'Add price'}
+                          </button>
                         )}
                       </div>
                       {isAtHome && (
