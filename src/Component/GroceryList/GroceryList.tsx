@@ -6,10 +6,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface WeekCardProps {
   week: GroceryWeek;
   isCurrentWeek: boolean;
-  isAtHome: boolean;
 }
 
-const WeekCard: React.FC<WeekCardProps> = ({ week, isCurrentWeek, isAtHome }) => {
+const WeekCard: React.FC<WeekCardProps> = ({ week, isCurrentWeek }) => {
   const { toggleBought, removeItem, clearBought, updateItemPrice, getWeekTotal } = useGrocery();
   const [expanded, setExpanded] = useState(isCurrentWeek);
   const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
@@ -94,15 +93,13 @@ const WeekCard: React.FC<WeekCardProps> = ({ week, isCurrentWeek, isAtHome }) =>
                       <span className="item-qty">x{item.quantity}</span>
                     )}
                   </div>
-                  {isAtHome && (
-                    <button
-                      className="item-delete"
-                      onClick={() => removeItem(week.weekId, item.id)}
-                      aria-label="Delete item"
-                    >
-                      <FaTrash />
-                    </button>
-                  )}
+                  <button
+                    className="item-delete"
+                    onClick={() => removeItem(week.weekId, item.id)}
+                    aria-label="Delete item"
+                  >
+                    <FaTrash />
+                  </button>
                 </motion.div>
               ))}
 
@@ -110,14 +107,12 @@ const WeekCard: React.FC<WeekCardProps> = ({ week, isCurrentWeek, isAtHome }) =>
                 <div className="bought-section">
                   <div className="bought-header">
                     <h4>Bought ({boughtItems.length})</h4>
-                    {isAtHome && (
-                      <button 
-                        className="clear-bought-btn" 
-                        onClick={() => clearBought(week.weekId)}
-                      >
-                        Clear
-                      </button>
-                    )}
+                    <button 
+                      className="clear-bought-btn" 
+                      onClick={() => clearBought(week.weekId)}
+                    >
+                      Clear
+                    </button>
                   </div>
                   {boughtItems.map((item) => (
                     <motion.div
@@ -175,15 +170,13 @@ const WeekCard: React.FC<WeekCardProps> = ({ week, isCurrentWeek, isAtHome }) =>
                           </button>
                         )}
                       </div>
-                      {isAtHome && (
-                        <button
-                          className="item-delete"
-                          onClick={() => removeItem(week.weekId, item.id)}
-                          aria-label="Delete item"
-                        >
-                          <FaTrash />
-                        </button>
-                      )}
+                      <button
+                        className="item-delete"
+                        onClick={() => removeItem(week.weekId, item.id)}
+                        aria-label="Delete item"
+                      >
+                        <FaTrash />
+                      </button>
                     </motion.div>
                   ))}
                 </div>
@@ -281,7 +274,6 @@ const GroceryList: React.FC = () => {
             key={week.weekId}
             week={week}
             isCurrentWeek={currentWeek?.weekId === week.weekId}
-            isAtHome={isAtHome}
           />
         ))}
       </div>
