@@ -203,7 +203,7 @@ const GroceryList: React.FC = () => {
 
   const handleAddItem = (e: React.FormEvent) => {
     e.preventDefault();
-    if (newItemName.trim() && isAtHome) {
+    if (newItemName.trim()) {
       addItem(newItemName, newItemQty);
       setNewItemName('');
       setNewItemQty(1);
@@ -243,38 +243,30 @@ const GroceryList: React.FC = () => {
         </div>
       </div>
 
-      {isAtHome && (
-        <motion.form
-          className="add-item-form"
-          onSubmit={handleAddItem}
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <input
-            type="text"
-            placeholder="Add grocery item..."
-            value={newItemName}
-            onChange={(e) => setNewItemName(e.target.value)}
-            className="item-name-input"
-          />
-          <input
-            type="number"
-            min="1"
-            value={newItemQty}
-            onChange={(e) => setNewItemQty(Math.max(1, parseInt(e.target.value) || 1))}
-            className="item-qty-input"
-          />
-          <button type="submit" className="add-btn" disabled={!newItemName.trim()}>
-            <FaPlus />
-          </button>
-        </motion.form>
-      )}
-
-      {!isAtHome && (
-        <div className="away-notice">
-          You can only add items when at home. Tap items to mark as bought.
-        </div>
-      )}
+      <motion.form
+        className="add-item-form"
+        onSubmit={handleAddItem}
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <input
+          type="text"
+          placeholder="Add grocery item..."
+          value={newItemName}
+          onChange={(e) => setNewItemName(e.target.value)}
+          className="item-name-input"
+        />
+        <input
+          type="number"
+          min="1"
+          value={newItemQty}
+          onChange={(e) => setNewItemQty(Math.max(1, parseInt(e.target.value) || 1))}
+          className="item-qty-input"
+        />
+        <button type="submit" className="add-btn" disabled={!newItemName.trim()}>
+          <FaPlus />
+        </button>
+      </motion.form>
 
       <div className="weeks-container">
         {sortedWeeks.length === 0 && (
