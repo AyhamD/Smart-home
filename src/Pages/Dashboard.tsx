@@ -22,10 +22,10 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState<TabType>('images');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   
-  // Check if mobile (< 600px) - only hide Hue on mobile when away
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 600);
+  // Check if mobile phone (< 480px) - tablets always show tabs
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 480);
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 600);
+    const handleResize = () => setIsMobile(window.innerWidth <= 480);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
