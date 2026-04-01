@@ -90,11 +90,12 @@ class HueRemoteAPI {
       client_id: this.config.clientId,
       response_type: "code",
       state: state,
-      appid: this.config.appId,
-      deviceid: this.getDeviceId(),
-      devicename: "HueControl",
+      redirect_uri: this.config.redirectUri,
     });
 
+    console.log("[HueRemote] Auth URL:", `${HUE_AUTH_URL}?${params.toString()}`);
+    console.log("[HueRemote] Redirect URI:", this.config.redirectUri);
+    
     return `${HUE_AUTH_URL}?${params.toString()}`;
   }
 
@@ -120,6 +121,9 @@ class HueRemoteAPI {
       // Basic auth header with client credentials
       const basicAuth = btoa(`${this.config.clientId}:${this.config.clientSecret}`);
 
+      console.log("[HueRemote] Exchanging code for tokens...");
+      console.log("[HueRemote] Redirect URI:", this.config.redirectUri);
+
       const response = await fetch(HUE_TOKEN_URL, {
         method: "POST",
         headers: {
@@ -129,16 +133,18 @@ class HueRemoteAPI {
         body: new URLSearchParams({
           grant_type: "authorization_code",
           code: code,
+          redirect_uri: this.config.redirectUri,
         }).toString(),
       });
 
       if (!response.ok) {
         const error = await response.text();
-        console.error("[HueRemote] Token exchange failed:", error);
+        console.error("[HueRemote] Token exchange failed:", response.status, error);
         return false;
       }
 
       const tokens: HueTokens = await response.json();
+      console.log("[HueRemote] Token exchange successful");
       this.saveTokens(tokens);
       console.log("[HueRemote] Successfully authenticated");
       return true;
