@@ -333,6 +333,177 @@
   }
 }
 
+// Notice when Hue is unavailable (e.g., iPad mixed content blocking)
+.hue-unavailable-notice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  @include glass;
+  border-radius: 1rem;
+  border: 1px solid rgba($warning, 0.3);
+  background: rgba($warning, 0.1);
+  
+  .notice-icon {
+    font-size: 1.25rem;
+    color: $warning;
+  }
+  
+  p {
+    margin: 0;
+    color: $text-secondary;
+    font-size: 0.95rem;
+  }
+  
+  .retry-button-small,
+  .hue-login-button-small {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba($primary, 0.2);
+    border: 1px solid rgba($primary, 0.3);
+    border-radius: 0.5rem;
+    color: $primary;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    @include smooth-transition;
+    
+    &:hover {
+      background: $primary;
+      color: white;
+    }
+  }
+}
+
+// Hue OAuth login prompt
+.hue-login-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem;
+  @include glass;
+  border-radius: 1.5rem;
+  text-align: center;
+  
+  .login-icon {
+    font-size: 3rem;
+    color: $primary;
+  }
+  
+  h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: $text-primary;
+  }
+  
+  p {
+    margin: 0;
+    color: $text-secondary;
+    font-size: 1rem;
+    max-width: 300px;
+  }
+  
+  .auth-error {
+    color: $error;
+    font-size: 0.9rem;
+  }
+  
+  .hue-login-button {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 2rem;
+    background: $gradient-primary;
+    border: none;
+    border-radius: 0.75rem;
+    color: white;
+    font-weight: 600;
+    font-size: 1.1rem;
+    cursor: pointer;
+    @include smooth-transition;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: $glow-primary;
+    }
+    
+    &:active {
+      transform: translateY(0);
+    }
+  }
+}
+
+// OAuth callback page
+.oauth-callback-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: $gradient-background;
+  gap: 1.5rem;
+  padding: 2rem;
+  text-align: center;
+  
+  h2 {
+    margin: 0;
+    color: $text-primary;
+    font-size: 1.75rem;
+  }
+  
+  p {
+    margin: 0;
+    color: $text-secondary;
+    font-size: 1rem;
+  }
+  
+  .success-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba($success, 0.2);
+    color: $success;
+    font-size: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .error-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba($error, 0.2);
+    color: $error;
+    font-size: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .btn-primary {
+    padding: 0.75rem 2rem;
+    background: $gradient-primary;
+    border: none;
+    border-radius: 0.75rem;
+    color: white;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    @include smooth-transition;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: $glow-primary;
+    }
+  }
+}
+
 // Legacy support
 .bluetooth-controls {
   margin-bottom: 1.5rem;

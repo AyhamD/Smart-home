@@ -1,6 +1,5 @@
 // src/features/hue/pages/Dashboard.tsx
 import { LightGroup } from "../../../shared/types";
-import axios from "axios";
 import GroupCard from "../components/GroupCard/GroupCard";
 import Header from "../../../shared/components/Header/Header";
 import ImageUploader from "../../../shared/components/ImageUploader/ImageUploader";
@@ -9,14 +8,16 @@ import { useImageContext } from "../../weather/context/ImageContext";
 import { useNavigate } from "react-router";
 import { useBluetooth } from "../context/BluetoothContext";
 import { useGrocery } from "../../grocery/context/GroceryContext";
-import { FaHome, FaPowerOff } from "react-icons/fa";
+import { useHueAuth } from "../context/HueAuthContext";
+import { FaHome, FaPowerOff, FaSignInAlt } from "react-icons/fa";
 import GroceryList from "../../grocery/components/GroceryList/GroceryList";
 
 const Dashboard = () => {
-  const { lights, groups, loading, error, refreshData } = useHue();
+  const { lights, groups, loading, error, refreshData, setGroupAction, isRemoteMode } = useHue();
   const { userImages, setUserImages, currentImageIndex } = useImageContext();
   const { devices: bluetoothDevices } = useBluetooth();
   const { isAtHome, checkingNetwork } = useGrocery();
+  const { isAuthenticated, isLoading: authLoading, login, error: authError } = useHueAuth();
   const navigate = useNavigate();
 
   const allDevices = [
@@ -36,13 +37,8 @@ const Dashboard = () => {
           .filter((light) => group.lights?.includes(light.id))
           .some((light) => light.state.on);
 
-        await axios.put(
-          `http://${import.meta.env.VITE_HUE_BRIDGE_IP}/api/${
-            import.meta.env.VITE_HUE_USERNAME
-          }/groups/${groupId}/action`,
-          { on: !currentState }
-        );
-
+        // Use setGroupAction which works for both local and remote
+        await setGroupAction(groupId, { on: !currentState });
         refreshData();
       } catch (err) {
         console.error("Group toggle failed:", err);
@@ -58,12 +54,7 @@ const Dashboard = () => {
 
   const handleAllOff = async () => {
     try {
-      await axios.put(
-        `http://${import.meta.env.VITE_HUE_BRIDGE_IP}/api/${
-          import.meta.env.VITE_HUE_USERNAME
-        }/groups/0/action`,
-        { on: false }
-      );
+      await setGroupAction("0", { on: false });
       refreshData();
     } catch (err) {
       console.error("All off failed:", err);
@@ -110,8 +101,30 @@ const Dashboard = () => {
     );
   }
 
+  // Remote mode: Show login UI if not authenticated
+  if (isRemoteMode && !isAuthenticated && !authLoading) {
+    return (
+      <div className="dashboard-container away-mode">
+        <Header />
+        <div className="dashboard-content">
+          <div className="hue-login-prompt">
+            <FaSignInAlt className="login-icon" />
+            <h3>Connect to Hue</h3>
+            <p>Sign in with your Philips Hue account to control your lights.</p>
+            {authError && <p className="auth-error">{authError}</p>}
+            <button onClick={login} className="hue-login-button">
+              <FaSignInAlt />
+              <span>Sign in with Hue</span>
+            </button>
+          </div>
+          <GroceryList />
+        </div>
+      </div>
+    );
+  }
+
   // At home - wait for Hue to load
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="loading-screen">
         <div className="loading-spinner"></div>
@@ -120,11 +133,29 @@ const Dashboard = () => {
     );
   }
   
+  // At home but Hue bridge unreachable (e.g., iPad mixed content blocking)
+  // Show grocery with a note instead of hard error
   if (error) {
+    // In remote mode, offer re-login option
+    const needsLogin = isRemoteMode && error.includes("Not authenticated");
+    
     return (
-      <div className="error-screen">
-        <p>{error}</p>
-        <button onClick={refreshData} className="retry-button">Retry</button>
+      <div className="dashboard-container away-mode">
+        <Header />
+        <div className="dashboard-content">
+          <div className="hue-unavailable-notice">
+            <FaHome className="notice-icon" />
+            <p>{needsLogin ? "Session expired" : "Hue controls unavailable"}</p>
+            {needsLogin ? (
+              <button onClick={login} className="hue-login-button-small">
+                <FaSignInAlt /> Sign in
+              </button>
+            ) : (
+              <button onClick={refreshData} className="retry-button-small">Retry</button>
+            )}
+          </div>
+          <GroceryList />
+        </div>
       </div>
     );
   }
