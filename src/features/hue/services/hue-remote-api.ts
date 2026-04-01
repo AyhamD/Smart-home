@@ -252,11 +252,27 @@ class HueRemoteAPI {
 
   // Hue API methods
   async getLights(): Promise<Record<string, any>> {
-    return this.request("/lights");
+    console.log("[HueRemote] Fetching lights via proxy...");
+    try {
+      const result = await this.request<Record<string, any>>("/lights");
+      console.log("[HueRemote] Lights result:", result);
+      return result;
+    } catch (err) {
+      console.error("[HueRemote] getLights error:", err);
+      throw err;
+    }
   }
 
   async getGroups(): Promise<Record<string, any>> {
-    return this.request("/groups");
+    console.log("[HueRemote] Fetching groups via proxy...");
+    try {
+      const result = await this.request<Record<string, any>>("/groups");
+      console.log("[HueRemote] Groups result:", result);
+      return result;
+    } catch (err) {
+      console.error("[HueRemote] getGroups error:", err);
+      throw err;
+    }
   }
 
   async setLightState(lightId: string, state: Record<string, any>): Promise<any> {

@@ -8,48 +8,47 @@ export const config = {
 const HUE_API_BASE = "https://api.meethue.com/route/api/0";
 
 export default async function handler(request) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+
   // Handle CORS preflight
   if (request.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 204,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      },
-    });
+    return new Response(null, { status: 204, headers: corsHeaders });
   }
 
   try {
-    // Get the path from URL
+    // Get the path from URL - handle both /api/hue/lights and /api/hue/lights/ etc.
     const url = new URL(request.url);
-    const pathMatch = url.pathname.match(/\/api\/hue\/(.+)/);
-    const apiPath = pathMatch ? pathMatch[1] : '';
+    // Remove /api/hue prefix to get the actual path
+    let apiPath = url.pathname.replace(/^\/api\/hue\/?/, '');
+    
+    console.log('[Hue Proxy] Request URL:', request.url);
+    console.log('[Hue Proxy] API Path:', apiPath);
 
     if (!apiPath) {
-      return new Response(JSON.stringify({ error: 'Missing API path' }), {
+      return new Response(JSON.stringify({ error: 'Missing API path', url: request.url }), {
         status: 400,
-        headers: { 
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
       });
     }
 
     // Get authorization header from request
     const authHeader = request.headers.get('Authorization');
+    console.log('[Hue Proxy] Auth header present:', !!authHeader);
+    
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Missing Authorization header' }), {
         status: 401,
-        headers: { 
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
       });
     }
 
     // Build target URL
     const targetUrl = `${HUE_API_BASE}/${apiPath}`;
+    console.log('[Hue Proxy] Target URL:', targetUrl);
     
     // Forward the request to Hue API
     const fetchOptions = {
@@ -68,26 +67,26 @@ export default async function handler(request) {
       }
     }
 
+    console.log('[Hue Proxy] Fetching from Hue API...');
     const response = await fetch(targetUrl, fetchOptions);
     const data = await response.text();
+    
+    console.log('[Hue Proxy] Response status:', response.status);
+    console.log('[Hue Proxy] Response preview:', data.substring(0, 200));
 
     return new Response(data, {
       status: response.status,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      },
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });
   } catch (error) {
-    console.error('Hue API proxy error:', error);
-    return new Response(JSON.stringify({ error: 'Proxy request failed', details: error.message }), {
+    console.error('[Hue Proxy] Error:', error);
+    return new Response(JSON.stringify({ 
+      error: 'Proxy request failed', 
+      details: error.message,
+      stack: error.stack 
+    }), {
       status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });
   }
 }
