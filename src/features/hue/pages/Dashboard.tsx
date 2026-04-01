@@ -10,7 +10,7 @@ import { useNavigate } from "react-router";
 import { useBluetooth } from "../context/BluetoothContext";
 import { useGrocery } from "../../grocery/context/GroceryContext";
 import { useHueAuth } from "../context/HueAuthContext";
-import { FaHome, FaPowerOff, FaSignInAlt, FaImage, FaLightbulb, FaShoppingCart, FaChevronDown, FaChevronUp } from "react-icons/fa";
+import { FaHome, FaPowerOff, FaSignInAlt, FaImage, FaLightbulb, FaShoppingCart } from "react-icons/fa";
 import GroceryList from "../../grocery/components/GroceryList/GroceryList";
 
 type TabType = 'images' | 'lights' | 'grocery';
@@ -24,7 +24,6 @@ const Dashboard = () => {
   const navigate = useNavigate();
   
   const [activeTab, setActiveTab] = useState<TabType>('images');
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   
   // Check if mobile phone (< 480px) - tablets always show tabs
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 480);
@@ -91,18 +90,6 @@ const Dashboard = () => {
 
   const getActiveLightsCount = () => {
     return lights.filter(l => l.state.on).length;
-  };
-
-  const toggleGroupExpand = (groupId: string) => {
-    setExpandedGroups(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(groupId)) {
-        newSet.delete(groupId);
-      } else {
-        newSet.add(groupId);
-      }
-      return newSet;
-    });
   };
 
   // Show loading only when checking network status
@@ -281,59 +268,19 @@ const Dashboard = () => {
               </button>
             </div>
 
-            {/* Collapsible Room Cards */}
-            <div className="rooms-list">
-              {allDevices.map((group, index) => {
-                const isExpanded = expandedGroups.has(group.id);
-                const groupLights = lights.filter(l => 
-                  (group as LightGroup).lights?.includes(l.id)
-                );
-                const activeLights = groupLights.filter(l => l.state.on).length;
-                
-                return (
-                  <div key={group.id} className={`room-card-collapsible ${isExpanded ? 'expanded' : ''}`}>
-                    <div className="room-card-header">
-                      <div className="room-card-content" onClick={() => toggleGroupExpand(group.id)}>
-                        <GroupCard
-                          group={group as any}
-                          isActive={isGroupActive(group as any)}
-                          onToggle={() => handleGroupToggle(group.id, group.type as any)}
-                          onClick={() => OpenLights(group.id)}
-                          type={group.type as any}
-                          colorIndex={index}
-                        />
-                      </div>
-                      <button className="expand-toggle" onClick={() => toggleGroupExpand(group.id)}>
-                        {isExpanded ? <FaChevronUp /> : <FaChevronDown />}
-                        <span className="lights-count">{activeLights}/{groupLights.length}</span>
-                      </button>
-                    </div>
-                    {isExpanded && (
-                      <div className="room-card-details">
-                        <div className="room-lights-list">
-                          {groupLights.map(light => (
-                            <div 
-                              key={light.id} 
-                              className={`light-item ${light.state.on ? 'on' : 'off'}`}
-                            >
-                              <span className="light-name">{light.name}</span>
-                              <span className={`light-status ${light.state.on ? 'on' : 'off'}`}>
-                                {light.state.on ? 'On' : 'Off'}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                        <button 
-                          className="open-room-button"
-                          onClick={() => OpenLights(group.id)}
-                        >
-                          Open Room Controls
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+            {/* Rooms Grid - Cube Style */}
+            <div className="rooms-grid">
+              {allDevices.map((group, index) => (
+                <GroupCard
+                  key={group.id}
+                  group={group as any}
+                  isActive={isGroupActive(group as any)}
+                  onToggle={() => handleGroupToggle(group.id, group.type as any)}
+                  onClick={() => OpenLights(group.id)}
+                  type={group.type as any}
+                  colorIndex={index}
+                />
+              ))}
             </div>
           </div>
         )}
