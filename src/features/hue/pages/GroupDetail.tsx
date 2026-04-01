@@ -1,10 +1,16 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router";
 import Header from "../../../shared/components/Header/Header";
 import { motion } from "framer-motion";
 import ColorPicker from "../components/ColorPicker/ColorPicker";
 import LightCard from "../components/LightCard/LightCard";
+import { hueRemoteAPI } from "../services/hue-remote-api";
+
+// Check if we should use remote mode (HTTPS = Vercel = remote)
+const isRemoteMode = () => {
+  return hueRemoteAPI.isConfigured() && window.location.protocol === "https:";
+};
 
 const GroupDetail = () => {
   const { groupId } = useParams();
@@ -12,6 +18,8 @@ const GroupDetail = () => {
   const [group, setGroup] = useState<any>(null);
   const [groupLights, setGroupLights] = useState<any[]>([]);
   const [brightness, setBrightness] = useState(254);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [pickerPosition, setPickerPosition] = useState({ x: 100, y: 100 });
   const [color, setColor] = useState({
     hsl: { h: 0, s: 100, l: 50 },
@@ -19,30 +27,81 @@ const GroupDetail = () => {
     rgb: { r: 255, g: 0, b: 0 },
   });
 
+  const remoteMode = isRemoteMode();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Check authentication in remote mode
+  useEffect(() => {
+    if (remoteMode && !hueRemoteAPI.isAuthenticated() && !hueRemoteAPI.hasRefreshToken()) {
+      console.log("[GroupDetail] Not authenticated in remote mode, redirecting to dashboard");
+      navigate("/");
+    }
+  }, [remoteMode, navigate]);
+
+  // API helper functions
+  const apiGetGroup = useCallback(async (gId: string) => {
+    if (remoteMode) {
+      return hueRemoteAPI.request<any>(`/groups/${gId}`);
+    } else {
+      const res = await axios.get(
+        `http://${import.meta.env.VITE_HUE_BRIDGE_IP}/api/${import.meta.env.VITE_HUE_USERNAME}/groups/${gId}`
+      );
+      return res.data;
+    }
+  }, [remoteMode]);
+
+  const apiGetLights = useCallback(async () => {
+    if (remoteMode) {
+      return hueRemoteAPI.getLights();
+    } else {
+      const res = await axios.get(
+        `http://${import.meta.env.VITE_HUE_BRIDGE_IP}/api/${import.meta.env.VITE_HUE_USERNAME}/lights`
+      );
+      return res.data;
+    }
+  }, [remoteMode]);
+
+  const apiSetLightState = useCallback(async (lightId: string, state: Record<string, any>) => {
+    if (remoteMode) {
+      return hueRemoteAPI.setLightState(lightId, state);
+    } else {
+      return axios.put(
+        `http://${import.meta.env.VITE_HUE_BRIDGE_IP}/api/${import.meta.env.VITE_HUE_USERNAME}/lights/${lightId}/state`,
+        state
+      );
+    }
+  }, [remoteMode]);
+
+  const apiSetGroupAction = useCallback(async (gId: string, action: Record<string, any>) => {
+    if (remoteMode) {
+      return hueRemoteAPI.setGroupAction(gId, action);
+    } else {
+      return axios.put(
+        `http://${import.meta.env.VITE_HUE_BRIDGE_IP}/api/${import.meta.env.VITE_HUE_USERNAME}/groups/${gId}/action`,
+        action
+      );
+    }
+  }, [remoteMode]);
+
   useEffect(() => {
     const fetchGroupData = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        const groupRes = await axios.get(
-          `http://${import.meta.env.VITE_HUE_BRIDGE_IP}/api/${
-            import.meta.env.VITE_HUE_USERNAME
-          }/groups/${groupId}`
-        );
+        const [groupData, lightsData] = await Promise.all([
+          apiGetGroup(groupId!),
+          apiGetLights()
+        ]);
 
-        const lightsRes = await axios.get(
-          `http://${import.meta.env.VITE_HUE_BRIDGE_IP}/api/${
-            import.meta.env.VITE_HUE_USERNAME
-          }/lights`
-        );
         // Show ALL lights in the group, not just reachable ones
-        const lightsInGroup = groupRes.data.lights
+        const lightsInGroup = groupData.lights
           .map((lightId: string) => ({
             id: lightId,
-            ...lightsRes.data[lightId],
+            ...lightsData[lightId],
           }))
           .filter((light: any) => light.name); // Only filter out invalid light IDs
 
-        setGroup(groupRes.data);
+        setGroup(groupData);
         setGroupLights(lightsInGroup);
 
         // Use first reachable light for initial color
@@ -69,33 +128,32 @@ const GroupDetail = () => {
           });
           setBrightness(lightsInGroup[0].state.bri || 254);
         }
-      } catch (error) {
-        console.error("Failed to fetch group data:", error);
+      } catch (err: any) {
+        console.error("Failed to fetch group data:", err);
+        setError(err.message || "Failed to load group");
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchGroupData();
-  }, [groupId]);
+    if (groupId) {
+      fetchGroupData();
+    }
+  }, [groupId, apiGetGroup, apiGetLights]);
 
   const refreshData = async () => {
     try {
-      const groupRes = await axios.get(
-        `http://${import.meta.env.VITE_HUE_BRIDGE_IP}/api/${
-          import.meta.env.VITE_HUE_USERNAME
-        }/groups/${groupId}`
-      );
-      setGroup(groupRes.data);
-
-      const lightsRes = await axios.get(
-        `http://${import.meta.env.VITE_HUE_BRIDGE_IP}/api/${
-          import.meta.env.VITE_HUE_USERNAME
-        }/lights`
-      );
+      const [groupData, lightsData] = await Promise.all([
+        apiGetGroup(groupId!),
+        apiGetLights()
+      ]);
+      
+      setGroup(groupData);
       // Show ALL lights, not just reachable ones
-      const lightsInGroup = groupRes.data.lights
+      const lightsInGroup = groupData.lights
         .map((lightId: string) => ({
           id: lightId,
-          ...lightsRes.data[lightId],
+          ...lightsData[lightId],
         }))
         .filter((light: any) => light.name);
 
@@ -145,12 +203,7 @@ const GroupDetail = () => {
 
   const updateGroupLights = async (payload: object) => {
     try {
-      await axios.put(
-        `http://${import.meta.env.VITE_HUE_BRIDGE_IP}/api/${
-          import.meta.env.VITE_HUE_USERNAME
-        }/groups/${groupId}/action`,
-        payload
-      );
+      await apiSetGroupAction(groupId!, payload);
 
       setGroupLights((prev) =>
         prev.map((light) => ({
@@ -198,12 +251,7 @@ const GroupDetail = () => {
     brightness: number
   ) => {
     try {
-      await axios.put(
-        `http://${import.meta.env.VITE_HUE_BRIDGE_IP}/api/${
-          import.meta.env.VITE_HUE_USERNAME
-        }/lights/${lightId}/state`,
-        { bri: brightness }
-      );
+      await apiSetLightState(lightId, { bri: brightness });
 
       setGroupLights((prev) =>
         prev.map((l) =>
@@ -228,11 +276,7 @@ const GroupDetail = () => {
 
       const newState = !light.state.on;
 
-      await axios.put(
-        `http://${import.meta.env.VITE_HUE_BRIDGE_IP}/api/${
-          import.meta.env.VITE_HUE_USERNAME
-        }/lights/${lightId}/state`,
-        { on: newState }
+      await apiSetLightState(lightId, { on: newState });
       );
 
       setGroupLights((prev) =>
@@ -246,7 +290,32 @@ const GroupDetail = () => {
     }
   };
 
-  if (!group) return <div className="loading">Loading group details...</div>;
+  if (loading) {
+    return (
+      <div className="loading-screen">
+        <div className="loading-spinner"></div>
+        <p>Loading group details...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="error-screen">
+        <p>{error}</p>
+        <button onClick={() => navigate("/")} className="retry-button">Back to Dashboard</button>
+      </div>
+    );
+  }
+
+  if (!group) {
+    return (
+      <div className="loading-screen">
+        <p>Group not found</p>
+        <button onClick={() => navigate("/")} className="retry-button">Back to Dashboard</button>
+      </div>
+    );
+  }
 
   return (
     <motion.div className="group-detail">
@@ -262,15 +331,10 @@ const GroupDetail = () => {
                 onColorChange={(hsl, hex, rgb) => {
                   setColor({ hsl, hex, rgb });
                   groupLights.forEach((light) => {
-                    axios.put(
-                      `http://${import.meta.env.VITE_HUE_BRIDGE_IP}/api/${
-                        import.meta.env.VITE_HUE_USERNAME
-                      }/lights/${light.id}/state`,
-                      {
-                        hue: Math.round((hsl.h / 360) * 65535),
-                        sat: Math.round((hsl.s / 100) * 254),
-                      }
-                    );
+                    apiSetLightState(light.id, {
+                      hue: Math.round((hsl.h / 360) * 65535),
+                      sat: Math.round((hsl.s / 100) * 254),
+                    });
                   });
                 }}
                 onPickerPositionChange={setPickerPosition}
