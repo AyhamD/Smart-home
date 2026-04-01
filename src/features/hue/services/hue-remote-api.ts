@@ -2,7 +2,8 @@
 // Docs: https://developers.meethue.com/develop/hue-api-v2/
 
 const HUE_AUTH_URL = "https://api.meethue.com/v2/oauth2/authorize";
-const HUE_TOKEN_URL = "https://api.meethue.com/v2/oauth2/token";
+// Use our serverless proxy to avoid CORS issues
+const HUE_TOKEN_PROXY = "/api/hue-token";
 const HUE_API_BASE = "https://api.meethue.com/route/api/0";
 
 // Storage keys
@@ -14,6 +15,8 @@ interface HueTokens {
   access_token: string;
   refresh_token: string;
   expires_in: number;
+  error?: string;
+  error_description?: string;
 }
 
 interface HueRemoteConfig {
@@ -99,15 +102,6 @@ class HueRemoteAPI {
     return `${HUE_AUTH_URL}?${params.toString()}`;
   }
 
-  private getDeviceId(): string {
-    let deviceId = localStorage.getItem("hue_device_id");
-    if (!deviceId) {
-      deviceId = crypto.randomUUID();
-      localStorage.setItem("hue_device_id", deviceId);
-    }
-    return deviceId;
-  }
-
   // Exchange authorization code for tokens
   async exchangeCodeForTokens(code: string, state: string): Promise<boolean> {
     const savedState = sessionStorage.getItem("hue_oauth_state");
@@ -118,23 +112,20 @@ class HueRemoteAPI {
     sessionStorage.removeItem("hue_oauth_state");
 
     try {
-      // Basic auth header with client credentials
-      const basicAuth = btoa(`${this.config.clientId}:${this.config.clientSecret}`);
-
-      console.log("[HueRemote] Exchanging code for tokens...");
+      console.log("[HueRemote] Exchanging code for tokens via proxy...");
       console.log("[HueRemote] Redirect URI:", this.config.redirectUri);
 
-      const response = await fetch(HUE_TOKEN_URL, {
+      // Use our serverless proxy to avoid CORS issues
+      const response = await fetch(HUE_TOKEN_PROXY, {
         method: "POST",
         headers: {
-          "Authorization": `Basic ${basicAuth}`,
-          "Content-Type": "application/x-www-form-urlencoded",
+          "Content-Type": "application/json",
         },
-        body: new URLSearchParams({
+        body: JSON.stringify({
           grant_type: "authorization_code",
           code: code,
           redirect_uri: this.config.redirectUri,
-        }).toString(),
+        }),
       });
 
       if (!response.ok) {
@@ -144,6 +135,12 @@ class HueRemoteAPI {
       }
 
       const tokens: HueTokens = await response.json();
+      
+      if (tokens.error) {
+        console.error("[HueRemote] Token error:", tokens);
+        return false;
+      }
+      
       console.log("[HueRemote] Token exchange successful");
       this.saveTokens(tokens);
       console.log("[HueRemote] Successfully authenticated");
@@ -162,18 +159,16 @@ class HueRemoteAPI {
     }
 
     try {
-      const basicAuth = btoa(`${this.config.clientId}:${this.config.clientSecret}`);
-
-      const response = await fetch(HUE_TOKEN_URL, {
+      // Use our serverless proxy to avoid CORS issues
+      const response = await fetch(HUE_TOKEN_PROXY, {
         method: "POST",
         headers: {
-          "Authorization": `Basic ${basicAuth}`,
-          "Content-Type": "application/x-www-form-urlencoded",
+          "Content-Type": "application/json",
         },
-        body: new URLSearchParams({
+        body: JSON.stringify({
           grant_type: "refresh_token",
           refresh_token: this.refreshToken,
-        }).toString(),
+        }),
       });
 
       if (!response.ok) {
@@ -183,6 +178,13 @@ class HueRemoteAPI {
       }
 
       const tokens: HueTokens = await response.json();
+      
+      if (tokens.error) {
+        console.error("[HueRemote] Token refresh error:", tokens);
+        this.clearTokens();
+        return false;
+      }
+      
       this.saveTokens(tokens);
       console.log("[HueRemote] Token refreshed successfully");
       return true;
