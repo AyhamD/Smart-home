@@ -1,4 +1,5 @@
 // src/features/hue/pages/Dashboard.tsx
+import { useState, useEffect } from "react";
 import { LightGroup } from "../../../shared/types";
 import GroupCard from "../components/GroupCard/GroupCard";
 import Header from "../../../shared/components/Header/Header";
@@ -9,8 +10,10 @@ import { useNavigate } from "react-router";
 import { useBluetooth } from "../context/BluetoothContext";
 import { useGrocery } from "../../grocery/context/GroceryContext";
 import { useHueAuth } from "../context/HueAuthContext";
-import { FaHome, FaPowerOff, FaSignInAlt } from "react-icons/fa";
+import { FaHome, FaPowerOff, FaSignInAlt, FaImage, FaLightbulb, FaShoppingCart, FaChevronDown, FaChevronUp } from "react-icons/fa";
 import GroceryList from "../../grocery/components/GroceryList/GroceryList";
+
+type TabType = 'images' | 'lights' | 'grocery';
 
 const Dashboard = () => {
   const { lights, groups, loading, error, refreshData, setGroupAction, isRemoteMode } = useHue();
@@ -19,6 +22,17 @@ const Dashboard = () => {
   const { isAtHome, checkingNetwork } = useGrocery();
   const { isAuthenticated, isLoading: authLoading, login, error: authError } = useHueAuth();
   const navigate = useNavigate();
+  
+  const [activeTab, setActiveTab] = useState<TabType>('images');
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  
+  // Check if mobile phone (< 480px) - tablets always show tabs
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 480);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 480);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const allDevices = [
     ...groups.map((g) => ({ ...g, type: "hue" })),
@@ -77,6 +91,18 @@ const Dashboard = () => {
 
   const getActiveLightsCount = () => {
     return lights.filter(l => l.state.on).length;
+  };
+
+  const toggleGroupExpand = (groupId: string) => {
+    setExpandedGroups(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(groupId)) {
+        newSet.delete(groupId);
+      } else {
+        newSet.add(groupId);
+      }
+      return newSet;
+    });
   };
 
   // Show loading only when checking network status
@@ -160,72 +186,164 @@ const Dashboard = () => {
     );
   }
 
+  // Mobile: Show only grocery list
+  if (isMobile) {
+    return (
+      <div className="dashboard-container mobile-mode">
+        <Header />
+        <div className="dashboard-content">
+          <GroceryList />
+        </div>
+      </div>
+    );
+  }
+
+  // iPad/Tablet: Show tabbed dashboard
   return (
-    <div className="dashboard-container">
+    <div className="dashboard-container tablet-mode">
       <Header />
 
+      {/* Tab Navigation */}
+      <div className="tab-navigation">
+        <button 
+          className={`tab-button ${activeTab === 'images' ? 'active' : ''}`}
+          onClick={() => setActiveTab('images')}
+        >
+          <FaImage />
+          <span>Images</span>
+        </button>
+        <button 
+          className={`tab-button ${activeTab === 'lights' ? 'active' : ''}`}
+          onClick={() => setActiveTab('lights')}
+        >
+          <FaLightbulb />
+          <span>Lights</span>
+          {getActiveLightsCount() > 0 && (
+            <span className="tab-badge">{getActiveLightsCount()}</span>
+          )}
+        </button>
+        <button 
+          className={`tab-button ${activeTab === 'grocery' ? 'active' : ''}`}
+          onClick={() => setActiveTab('grocery')}
+        >
+          <FaShoppingCart />
+          <span>Grocery</span>
+        </button>
+      </div>
+
       <div className="dashboard-content">
-        {/* Status Bar */}
-        <div className="status-bar">
-          <div className="status-info">
-            <FaHome className="status-icon" />
-            <span className="status-text">
-              {getActiveLightsCount()} of {lights.length} lights on
-            </span>
-          </div>
-          <button 
-            className="all-off-button"
-            onClick={handleAllOff}
-            title="Turn all lights off"
-          >
-            <FaPowerOff />
-            <span>All Off</span>
-          </button>
-        </div>
-
-        <div className="main-layout">
-          {/* Rooms Grid - Hue App Style */}
-          <div className="rooms-grid">
-            {allDevices.map((group, index) => (
-              <GroupCard
-                key={group.id}
-                group={group as any}
-                isActive={isGroupActive(group as any)}
-                onToggle={() => handleGroupToggle(group.id, group.type as any)}
-                onClick={() => OpenLights(group.id)}
-                type={group.type as any}
-                colorIndex={index}
-              />
-            ))}
-          </div>
-
-          {/* Image Carousel - Ambient Display */}
-          <div className="ambient-display">
-            <div className="image-carousel">
-              <ImageUploader onImagesSelected={setUserImages} />
-              {userImages.length > 0 ? (
-                userImages.map((img, index) => (
-                  <img
-                    key={index}
-                    src={img}
-                    alt="Ambient display"
-                    className={`carousel-image ${
-                      index === currentImageIndex ? "active" : ""
-                    }`}
-                  />
-                ))
-              ) : (
-                <div className="upload-prompt">
-                  <div className="upload-icon">🖼️</div>
-                  <p>Add photos for ambient display</p>
-                </div>
-              )}
+        {/* Images Tab */}
+        {activeTab === 'images' && (
+          <div className="tab-content images-tab">
+            <div className="ambient-display fullscreen">
+              <div className="image-carousel">
+                <ImageUploader onImagesSelected={setUserImages} />
+                {userImages.length > 0 ? (
+                  userImages.map((img, index) => (
+                    <img
+                      key={index}
+                      src={img}
+                      alt="Ambient display"
+                      className={`carousel-image ${
+                        index === currentImageIndex ? "active" : ""
+                      }`}
+                    />
+                  ))
+                ) : (
+                  <div className="upload-prompt">
+                    <div className="upload-icon">🖼️</div>
+                    <p>Add photos for ambient display</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Grocery List Section */}
-        <GroceryList />
+        {/* Lights Tab */}
+        {activeTab === 'lights' && (
+          <div className="tab-content lights-tab">
+            {/* Status Bar */}
+            <div className="status-bar">
+              <div className="status-info">
+                <FaHome className="status-icon" />
+                <span className="status-text">
+                  {getActiveLightsCount()} of {lights.length} lights on
+                </span>
+              </div>
+              <button 
+                className="all-off-button"
+                onClick={handleAllOff}
+                title="Turn all lights off"
+              >
+                <FaPowerOff />
+                <span>All Off</span>
+              </button>
+            </div>
+
+            {/* Collapsible Room Cards */}
+            <div className="rooms-list">
+              {allDevices.map((group, index) => {
+                const isExpanded = expandedGroups.has(group.id);
+                const groupLights = lights.filter(l => 
+                  (group as LightGroup).lights?.includes(l.id)
+                );
+                const activeLights = groupLights.filter(l => l.state.on).length;
+                
+                return (
+                  <div key={group.id} className={`room-card-collapsible ${isExpanded ? 'expanded' : ''}`}>
+                    <div className="room-card-header">
+                      <div className="room-card-content" onClick={() => toggleGroupExpand(group.id)}>
+                        <GroupCard
+                          group={group as any}
+                          isActive={isGroupActive(group as any)}
+                          onToggle={() => handleGroupToggle(group.id, group.type as any)}
+                          onClick={() => OpenLights(group.id)}
+                          type={group.type as any}
+                          colorIndex={index}
+                        />
+                      </div>
+                      <button className="expand-toggle" onClick={() => toggleGroupExpand(group.id)}>
+                        {isExpanded ? <FaChevronUp /> : <FaChevronDown />}
+                        <span className="lights-count">{activeLights}/{groupLights.length}</span>
+                      </button>
+                    </div>
+                    {isExpanded && (
+                      <div className="room-card-details">
+                        <div className="room-lights-list">
+                          {groupLights.map(light => (
+                            <div 
+                              key={light.id} 
+                              className={`light-item ${light.state.on ? 'on' : 'off'}`}
+                            >
+                              <span className="light-name">{light.name}</span>
+                              <span className={`light-status ${light.state.on ? 'on' : 'off'}`}>
+                                {light.state.on ? 'On' : 'Off'}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                        <button 
+                          className="open-room-button"
+                          onClick={() => OpenLights(group.id)}
+                        >
+                          Open Room Controls
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Grocery Tab */}
+        {activeTab === 'grocery' && (
+          <div className="tab-content grocery-tab">
+            <GroceryList />
+          </div>
+        )}
       </div>
     </div>
   );
