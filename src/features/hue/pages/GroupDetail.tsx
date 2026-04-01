@@ -277,7 +277,6 @@ const GroupDetail = () => {
       const newState = !light.state.on;
 
       await apiSetLightState(lightId, { on: newState });
-      );
 
       setGroupLights((prev) =>
         prev.map((l) =>
