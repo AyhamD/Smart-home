@@ -2,9 +2,9 @@
 // Docs: https://developers.meethue.com/develop/hue-api-v2/
 
 const HUE_AUTH_URL = "https://api.meethue.com/v2/oauth2/authorize";
-// Use our serverless proxy to avoid CORS issues
+// Use our serverless proxies to avoid CORS issues
 const HUE_TOKEN_PROXY = "/api/hue-token";
-const HUE_API_BASE = "https://api.meethue.com/route/api/0";
+const HUE_API_PROXY = "/api/hue"; // Proxy for all API calls
 
 // Storage keys
 const ACCESS_TOKEN_KEY = "hue_access_token";
@@ -207,13 +207,14 @@ class HueRemoteAPI {
     return false;
   }
 
-  // Make authenticated API request
+  // Make authenticated API request via proxy
   async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     if (!await this.ensureValidToken()) {
       throw new Error("Not authenticated");
     }
 
-    const url = `${HUE_API_BASE}${endpoint}`;
+    // Use proxy to avoid CORS - endpoint like "/lights" becomes "/api/hue/lights"
+    const url = `${HUE_API_PROXY}${endpoint}`;
     const response = await fetch(url, {
       ...options,
       headers: {
@@ -241,6 +242,8 @@ class HueRemoteAPI {
     }
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error("[HueRemote] API error:", response.status, errorText);
       throw new Error(`API error: ${response.status}`);
     }
 
