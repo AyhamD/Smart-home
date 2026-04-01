@@ -215,13 +215,13 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({ children })
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 3000);
-
         const response = await fetch(`http://${bridgeIP}/api/config`, {
           signal: controller.signal,
         });
         clearTimeout(timeoutId);
-
-        setIsAtHome(response.ok);
+        if(import.meta.env.VITE_MY_IP_ADDRESS === "188.149.31.143"){
+          setIsAtHome(response.ok);
+        }
       } catch {
         setIsAtHome(false);
       }
