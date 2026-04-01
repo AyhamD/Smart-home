@@ -16,12 +16,21 @@
   padding: 0;
 }
 
+html {
+  height: 100%;
+  width: 100%;
+}
+
 body {
   font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
   background: $gradient-background;
   color: $text-primary;
-  min-height: 100vh;
+  min-height: 100%;
+  height: 100%;
+  width: 100%;
   overflow-x: hidden;
+  // Safe area insets for notched devices (iPhone, iPad)
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   
   // Animated background particles
   &::before {
@@ -36,6 +45,13 @@ body {
     z-index: -1;
     animation: pulse-glow 8s ease-in-out infinite;
   }
+}
+
+#root {
+  min-height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 @keyframes pulse-glow {
