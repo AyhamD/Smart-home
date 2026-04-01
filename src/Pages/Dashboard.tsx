@@ -4,7 +4,6 @@ import { FaHome, FaPowerOff } from "react-icons/fa";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import GroceryList from "../features/grocery/components/GroceryList/GroceryList";
-import { useGrocery } from "../features/grocery/context/GroceryContext";
 import GroupCard from "../features/hue/components/GroupCard/GroupCard";
 import { useBluetooth } from "../features/hue/context/BluetoothContext";
 import useHue from "../features/hue/hooks/useHue";
@@ -17,7 +16,6 @@ const Dashboard = () => {
   const { lights, groups, loading, error, refreshData } = useHue();
   const { userImages, setUserImages, currentImageIndex } = useImageContext();
   const { devices: bluetoothDevices } = useBluetooth();
-  const { isAtHome, checkingNetwork } = useGrocery();
   const navigate = useNavigate();
   
   // Check if mobile (< 600px) - only hide Hue on mobile when away
@@ -97,20 +95,10 @@ const Dashboard = () => {
     return lights.filter(l => l.state.on).length;
   };
 
-  // Show loading only when checking network status (only on mobile)
-  if (checkingNetwork && isMobile) {
+  // Mobile: Show only grocery list (no Hue controls)
+  if (isMobile) {
     return (
-      <div className="loading-screen">
-        <div className="loading-spinner"></div>
-        <p>Checking network...</p>
-      </div>
-    );
-  }
-
-  // When not at home AND on mobile, only show grocery list
-  if (!isAtHome && isMobile) {
-    return (
-      <div className="dashboard-container away-mode">
+      <div className="dashboard-container mobile-mode">
         <Header />
         <div className="dashboard-content">
           <GroceryList />
@@ -119,9 +107,8 @@ const Dashboard = () => {
     );
   }
 
-  // At home OR on tablet/desktop - show full dashboard
-  // Skip loading screen on tablet/desktop if not at home
-  if (loading && isAtHome) {
+  // iPad/Laptop: Show full dashboard with Hue + Grocery
+  if (loading) {
     return (
       <div className="loading-screen">
         <div className="loading-spinner"></div>
