@@ -1,5 +1,5 @@
 // Vercel serverless function to proxy Hue API requests
-// This is needed because Hue's API doesn't support CORS for browser requests
+// Usage: /api/hue-api?path=lights or /api/hue-api?path=groups/1/action
 
 export const config = {
   runtime: 'edge',
@@ -20,16 +20,14 @@ export default async function handler(request) {
   }
 
   try {
-    // Get the path from URL - handle both /api/hue/lights and /api/hue/lights/ etc.
+    // Get the path from query parameter
     const url = new URL(request.url);
-    // Remove /api/hue prefix to get the actual path
-    let apiPath = url.pathname.replace(/^\/api\/hue\/?/, '');
+    const apiPath = url.searchParams.get('path');
     
-    console.log('[Hue Proxy] Request URL:', request.url);
-    console.log('[Hue Proxy] API Path:', apiPath);
+    console.log('[Hue API Proxy] Requested path:', apiPath);
 
     if (!apiPath) {
-      return new Response(JSON.stringify({ error: 'Missing API path', url: request.url }), {
+      return new Response(JSON.stringify({ error: 'Missing path parameter' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
       });
@@ -37,7 +35,6 @@ export default async function handler(request) {
 
     // Get authorization header from request
     const authHeader = request.headers.get('Authorization');
-    console.log('[Hue Proxy] Auth header present:', !!authHeader);
     
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Missing Authorization header' }), {
@@ -48,7 +45,7 @@ export default async function handler(request) {
 
     // Build target URL
     const targetUrl = `${HUE_API_BASE}/${apiPath}`;
-    console.log('[Hue Proxy] Target URL:', targetUrl);
+    console.log('[Hue API Proxy] Target URL:', targetUrl);
     
     // Forward the request to Hue API
     const fetchOptions = {
@@ -67,23 +64,20 @@ export default async function handler(request) {
       }
     }
 
-    console.log('[Hue Proxy] Fetching from Hue API...');
     const response = await fetch(targetUrl, fetchOptions);
     const data = await response.text();
     
-    console.log('[Hue Proxy] Response status:', response.status);
-    console.log('[Hue Proxy] Response preview:', data.substring(0, 200));
+    console.log('[Hue API Proxy] Response status:', response.status);
 
     return new Response(data, {
       status: response.status,
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });
   } catch (error) {
-    console.error('[Hue Proxy] Error:', error);
+    console.error('[Hue API Proxy] Error:', error);
     return new Response(JSON.stringify({ 
       error: 'Proxy request failed', 
-      details: error.message,
-      stack: error.stack 
+      details: error.message 
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
