@@ -95,16 +95,12 @@ const Dashboard = () => {
     return lights.filter(l => l.state.on).length;
   };
 
-  // DEBUG: Show screen info
-  const debugInfo = `Width: ${typeof window !== 'undefined' ? window.innerWidth : 'SSR'}px | isMobile: ${isMobile}`;
-
   // Mobile: Show only grocery list (no Hue controls)
   if (isMobile) {
     return (
       <div className="dashboard-container mobile-mode">
         <Header />
         <div className="dashboard-content">
-          <div style={{background: 'red', color: 'white', padding: '10px'}}>DEBUG: {debugInfo} - MOBILE VIEW</div>
           <GroceryList />
         </div>
       </div>
@@ -112,10 +108,8 @@ const Dashboard = () => {
   }
 
   // iPad/Laptop: Show full dashboard with Hue + Grocery
-  // Don't block on loading - show dashboard with empty rooms if Hue unavailable
   return (
     <div className="dashboard-container">
-      <div style={{background: 'green', color: 'white', padding: '10px', position: 'fixed', top: 0, left: 0, zIndex: 9999}}>DEBUG: {debugInfo} - DESKTOP VIEW</div>
       <Header />
 
       <div className="dashboard-content">
