@@ -216,28 +216,57 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({
     setSyncing(false);
   }, []);
 
-  // Network check
+  // Network check - uses public IP detection with bridge ping fallback
   useEffect(() => {
     const checkNetwork = async () => {
       setCheckingNetwork(true);
-      try {
-        const bridgeIP = import.meta.env.VITE_HUE_BRIDGE_IP;
-        if (!bridgeIP) {
-          setIsAtHome(false);
-          setCheckingNetwork(false);
-          return;
-        }
+      const homeIP = import.meta.env.VITE_MY_IP_ADDRESS;
 
+      // Method 1: Check public IP via ipify
+      try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000);
-        const response = await fetch(`http://${bridgeIP}/api/config`, {
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+        const response = await fetch("https://api.ipify.org?format=json", {
           signal: controller.signal,
         });
         clearTimeout(timeoutId);
-        setIsAtHome(response.ok);
-      } catch {
-        setIsAtHome(false);
+
+        if (response.ok) {
+          const data = await response.json();
+          const currentIP = data.ip;
+          console.log(`[Network] Public IP: ${currentIP}, Home IP: ${homeIP}`);
+
+          if (currentIP === homeIP) {
+            setIsAtHome(true);
+            setCheckingNetwork(false);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn("[Network] ipify check failed, trying bridge fallback:", err);
       }
+
+      // Method 2: Fallback - try to ping local Hue Bridge
+      try {
+        const bridgeIP = import.meta.env.VITE_HUE_BRIDGE_IP;
+        if (bridgeIP) {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 3000);
+          const response = await fetch(`http://${bridgeIP}/api/config`, {
+            signal: controller.signal,
+          });
+          clearTimeout(timeoutId);
+          setIsAtHome(response.ok);
+          setCheckingNetwork(false);
+          return;
+        }
+      } catch (err) {
+        console.warn("[Network] Bridge ping failed:", err);
+      }
+
+      // Both methods failed - default to away mode (grocery only)
+      setIsAtHome(false);
       setCheckingNetwork(false);
     };
 
