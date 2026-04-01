@@ -13,7 +13,7 @@ import ImageUploader from "../shared/components/ImageUploader/ImageUploader";
 import { LightGroup } from "../shared/types";
 
 const Dashboard = () => {
-  const { lights, groups, loading, error, refreshData } = useHue();
+  const { lights, groups, refreshData } = useHue();
   const { userImages, setUserImages, currentImageIndex } = useImageContext();
   const { devices: bluetoothDevices } = useBluetooth();
   const navigate = useNavigate();
@@ -108,24 +108,7 @@ const Dashboard = () => {
   }
 
   // iPad/Laptop: Show full dashboard with Hue + Grocery
-  if (loading) {
-    return (
-      <div className="loading-screen">
-        <div className="loading-spinner"></div>
-        <p>Connecting to Hue Bridge...</p>
-      </div>
-    );
-  }
-  
-  if (error) {
-    return (
-      <div className="error-screen">
-        <p>{error}</p>
-        <button onClick={refreshData} className="retry-button">Retry</button>
-      </div>
-    );
-  }
-
+  // Don't block on loading - show dashboard with empty rooms if Hue unavailable
   return (
     <div className="dashboard-container">
       <Header />
