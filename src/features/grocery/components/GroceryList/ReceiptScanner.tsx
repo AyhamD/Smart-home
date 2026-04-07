@@ -398,10 +398,6 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
     .filter(item => item.selected)
     .reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
-  };
-
   return (
     <motion.div 
       className="receipt-scanner-overlay"
@@ -457,14 +453,6 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
             </div>
           ) : !imageData ? (
             <div className="capture-section">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleFileSelect}
-                style={{ display: 'none' }}
-              />
-              
               {cameraError && (
                 <div className="camera-error">
                   <p>{cameraError}</p>
@@ -476,10 +464,18 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
                   <FaCamera />
                   <span>Use Camera</span>
                 </button>
-                <button className="capture-btn gallery" onClick={triggerFileInput}>
+                
+                {/* Use label for better mobile file input support */}
+                <label className="capture-btn gallery">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                  />
                   <FaImage />
                   <span>Choose Photo</span>
-                </button>
+                </label>
               </div>
               <p className="hint">Scan a receipt to extract items with prices</p>
             </div>
