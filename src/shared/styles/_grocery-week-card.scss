@@ -1,0 +1,411 @@
+@use "variables" as *;
+
+// Week Card Styles
+.week-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  overflow: hidden;
+  @include smooth-transition;
+  
+  &.current {
+    border-color: rgba($primary, 0.3);
+    background: rgba($primary, 0.05);
+  }
+  
+  .week-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    cursor: pointer;
+    @include smooth-transition;
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+    
+    .week-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      
+      .week-icon {
+        font-size: 1.25rem;
+        color: $primary;
+      }
+      
+      .week-details {
+        h3 {
+          font-size: 1rem;
+          font-weight: 600;
+          color: $text-primary;
+          margin: 0;
+        }
+        
+        .week-dates {
+          font-size: 0.8rem;
+          color: $text-muted;
+        }
+      }
+      
+      .current-badge {
+        background: $gradient-primary;
+        color: white;
+        font-size: 0.65rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        padding: 0.2rem 0.5rem;
+        border-radius: 0.25rem;
+        letter-spacing: 0.03em;
+      }
+    }
+    
+    .week-summary {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      color: $text-muted;
+      
+      .week-total {
+        text-align: right;
+        
+        .total-amount {
+          font-size: 1.1rem;
+          font-weight: 600;
+          color: $success;
+        }
+        
+        .total-pending {
+          font-size: 0.8rem;
+          color: $warning;
+        }
+      }
+      
+      .item-count {
+        font-size: 0.8rem;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 0.2rem 0.5rem;
+        border-radius: 0.25rem;
+      }
+    }
+  }
+  
+  .week-content {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+  }
+  
+  .total-spent-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    
+    .total-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: $text-muted;
+      font-size: 0.9rem;
+      
+      svg {
+        color: $success;
+      }
+    }
+    
+    .total-input-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      
+      .total-input {
+        width: 100px;
+        padding: 0.5rem 0.75rem;
+        border: none;
+        border-radius: 0.5rem;
+        background: rgba(255, 255, 255, 0.1);
+        color: $text-primary;
+        font-size: 1rem;
+        text-align: right;
+        
+        &:focus {
+          outline: none;
+          box-shadow: 0 0 0 2px rgba($primary, 0.3);
+        }
+        
+        &::-webkit-inner-spin-button,
+        &::-webkit-outer-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+      }
+      
+      .save-total-btn {
+        width: 32px;
+        height: 32px;
+        border: none;
+        border-radius: 50%;
+        background: $success;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        @include smooth-transition;
+        
+        &:hover {
+          transform: scale(1.1);
+        }
+      }
+    }
+    
+    .edit-total-btn {
+      padding: 0.5rem 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 0.5rem;
+      background: transparent;
+      color: $text-primary;
+      font-size: 0.9rem;
+      cursor: pointer;
+      @include smooth-transition;
+      
+      &:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: $primary;
+      }
+      
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+  }
+  
+  .grocery-items {
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  
+  .empty-week {
+    text-align: center;
+    padding: 1rem;
+    color: $text-muted;
+    font-size: 0.85rem;
+  }
+  
+  .grocery-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 0.5rem;
+    @include smooth-transition;
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+    
+    &.bought {
+      opacity: 0.5;
+      
+      .item-name {
+        text-decoration: line-through;
+        color: $text-muted;
+      }
+    }
+    
+    .item-check {
+      width: 24px;
+      height: 24px;
+      min-width: 24px;
+      border: none;
+      background: transparent;
+      padding: 0;
+      cursor: pointer;
+      
+      .check-circle {
+        width: 24px;
+        height: 24px;
+        border: 2px solid rgba(255, 255, 255, 0.25);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        @include smooth-transition;
+        color: transparent;
+        font-size: 0.6rem;
+      }
+      
+      &:hover .check-circle {
+        border-color: $primary;
+        background: rgba($primary, 0.1);
+      }
+      
+      &.checked .check-circle {
+        background: $success;
+        border-color: $success;
+        color: white;
+      }
+    }
+    
+    .item-info {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-width: 0;
+      
+      .item-name {
+        font-size: 0.9rem;
+        color: $text-primary;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      
+      .item-qty {
+        font-size: 0.75rem;
+        color: $text-muted;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 0.1rem 0.35rem;
+        border-radius: 0.2rem;
+        flex-shrink: 0;
+      }
+    }
+    
+    .item-delete {
+      width: 28px;
+      height: 28px;
+      min-width: 28px;
+      border: none;
+      background: transparent;
+      color: $text-muted;
+      cursor: pointer;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      @include smooth-transition;
+      
+      &:hover {
+        background: rgba($danger, 0.2);
+        color: $danger;
+      }
+    }
+    
+    .item-price {
+      flex-shrink: 0;
+      
+      .price-input-group {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        
+        .price-input {
+          width: 65px;
+          padding: 0.35rem 0.5rem;
+          border: none;
+          border-radius: 0.35rem;
+          background: rgba(255, 255, 255, 0.15);
+          color: $text-primary;
+          font-size: 0.85rem;
+          text-align: right;
+          
+          &:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba($primary, 0.3);
+          }
+          
+          &::-webkit-inner-spin-button,
+          &::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+          }
+        }
+        
+        .save-price-btn {
+          width: 24px;
+          height: 24px;
+          min-width: 24px;
+          border: none;
+          border-radius: 50%;
+          background: $success;
+          color: white;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 0.6rem;
+          @include smooth-transition;
+          
+          &:hover {
+            transform: scale(1.1);
+          }
+        }
+      }
+      
+      .edit-price-btn {
+        padding: 0.35rem 0.6rem;
+        border: 1px dashed rgba(255, 255, 255, 0.2);
+        border-radius: 0.35rem;
+        background: transparent;
+        color: $text-muted;
+        font-size: 0.8rem;
+        cursor: pointer;
+        @include smooth-transition;
+        white-space: nowrap;
+        
+        &:hover {
+          background: rgba(255, 255, 255, 0.08);
+          border-color: $success;
+          color: $success;
+        }
+      }
+    }
+  }
+  
+  .bought-section {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    
+    .bought-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 0.25rem;
+      margin-bottom: 0.5rem;
+      
+      h4 {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: $text-muted;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin: 0;
+      }
+      
+      .clear-bought-btn {
+        background: transparent;
+        border: none;
+        color: $danger;
+        font-size: 0.75rem;
+        cursor: pointer;
+        padding: 0.3rem 0.5rem;
+        border-radius: 0.3rem;
+        @include smooth-transition;
+        
+        &:hover {
+          background: rgba($danger, 0.1);
+        }
+      }
+    }
+  }
+}

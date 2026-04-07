@@ -197,7 +197,11 @@ export const AllReceiptsViewer: React.FC<AllReceiptsViewerProps> = ({ isOpen, on
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setSelectedReceipt(null)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setSelectedReceipt(null);
+              }}
             >
               <motion.div
                 className="fullscreen-content"
@@ -220,7 +224,14 @@ export const AllReceiptsViewer: React.FC<AllReceiptsViewerProps> = ({ isOpen, on
                       })}
                     </span>
                   </div>
-                  <button className="close-btn" onClick={() => setSelectedReceipt(null)}>
+                  <button 
+                    className="close-btn" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setSelectedReceipt(null);
+                    }}
+                  >
                     <FaTimes />
                   </button>
                 </div>

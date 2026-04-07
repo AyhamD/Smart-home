@@ -1,0 +1,271 @@
+@use "variables" as *;
+
+.grocery-list {
+  @include glass;
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  max-height: 600px;
+  overflow-y: auto;
+  
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba($primary, 0.3);
+    border-radius: 3px;
+    
+    &:hover {
+      background: rgba($primary, 0.5);
+    }
+  }
+  
+  .grocery-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    
+    .grocery-title {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      
+      .grocery-icon {
+        font-size: 1.25rem;
+        color: $primary;
+      }
+      
+      h2 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: $text-primary;
+        margin: 0;
+      }
+    }
+    
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .receipts-btn {
+      position: relative;
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 50%;
+      background: rgba($accent, 0.15);
+      color: $accent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      @include smooth-transition;
+      
+      &:hover {
+        background: rgba($accent, 0.25);
+        transform: scale(1.05);
+      }
+      
+      .receipt-badge {
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        min-width: 18px;
+        height: 18px;
+        background: $primary;
+        color: white;
+        border-radius: 9px;
+        font-size: 0.65rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 4px;
+      }
+    }
+    
+    .sync-btn {
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 50%;
+      background: rgba($primary, 0.15);
+      color: $primary;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      @include smooth-transition;
+      font-size: 1rem;
+      
+      &:hover {
+        background: rgba($primary, 0.25);
+        transform: scale(1.05);
+      }
+      
+      &:active {
+        transform: scale(0.95);
+      }
+      
+      &.syncing {
+        animation: spin 1s linear infinite;
+        background: rgba($primary, 0.2);
+      }
+      
+      &:disabled {
+        cursor: not-allowed;
+        opacity: 0.7;
+      }
+    }
+    
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    
+    .network-status {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.4rem 0.75rem;
+      border-radius: 2rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      
+      &.home {
+        background: rgba($success, 0.2);
+        color: $success;
+      }
+      
+      &.away {
+        background: rgba($warning, 0.2);
+        color: $warning;
+      }
+    }
+  }
+  
+  .add-item-form {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    
+    .item-name-input {
+      flex: 1;
+      min-width: 0;
+      padding: 0.75rem 1rem;
+      border: none;
+      border-radius: 0.75rem;
+      background: rgba(255, 255, 255, 0.08);
+      color: $text-primary;
+      font-size: 0.95rem;
+      @include smooth-transition;
+      
+      &:focus {
+        outline: none;
+        background: rgba(255, 255, 255, 0.12);
+        box-shadow: 0 0 0 2px rgba($primary, 0.3);
+      }
+      
+      &::placeholder {
+        color: $text-muted;
+      }
+    }
+    
+    .item-qty-input {
+      width: 60px;
+      padding: 0.75rem;
+      border: none;
+      border-radius: 0.75rem;
+      background: rgba(255, 255, 255, 0.08);
+      color: $text-primary;
+      font-size: 0.95rem;
+      text-align: center;
+      appearance: textfield;
+      
+      &:focus {
+        outline: none;
+        background: rgba(255, 255, 255, 0.12);
+        box-shadow: 0 0 0 2px rgba($primary, 0.3);
+      }
+      
+      &::-webkit-inner-spin-button,
+      &::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+    }
+    
+    .add-btn {
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      border: none;
+      border-radius: 50%;
+      background: $gradient-primary;
+      color: white;
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      @include smooth-transition;
+      
+      &:hover:not(:disabled) {
+        transform: scale(1.1);
+        box-shadow: $glow-primary;
+      }
+      
+      &:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+    }
+  }
+  
+  .away-notice {
+    background: rgba($warning, 0.1);
+    border: 1px solid rgba($warning, 0.2);
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    color: $warning;
+    font-size: 0.85rem;
+    text-align: center;
+  }
+  
+  .weeks-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .empty-list {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    color: $text-muted;
+    
+    .empty-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.75rem;
+      opacity: 0.4;
+    }
+    
+    p {
+      margin: 0;
+      font-size: 0.9rem;
+    }
+  }
+}

@@ -8,7 +8,16 @@
 @use 'colorPicker' as *;
 @use 'light' as *;
 @use 'dashboard' as *;
-@use 'grocery' as *;
+
+// Grocery styles - split into smaller files
+@use 'grocery-base' as *;
+@use 'grocery-week-card' as *;
+@use 'grocery-mobile' as *;
+@use 'grocery-budget' as *;
+@use 'grocery-finalize' as *;
+@use 'grocery-receipt-gallery' as *;
+@use 'receipt-scanner' as *;
+@use 'receipt-viewer' as *;
 
 * {
   box-sizing: border-box;

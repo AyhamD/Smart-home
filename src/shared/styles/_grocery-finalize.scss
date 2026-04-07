@@ -1,0 +1,63 @@
+@use "variables" as *;
+
+// Finalized Week Styles
+.week-card.finalized {
+  opacity: 0.85;
+  
+  .week-header {
+    background: rgba(255, 255, 255, 0.03);
+  }
+  
+  .grocery-item {
+    opacity: 0.7;
+    
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+  }
+}
+
+.finalized-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.6rem;
+  background: rgba($text-muted, 0.2);
+  border-radius: 2rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: $text-muted;
+  
+  svg {
+    font-size: 0.6rem;
+  }
+}
+
+.finalize-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  
+  .finalize-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: rgba($accent, 0.2);
+    border: 1px solid rgba($accent, 0.3);
+    border-radius: 0.75rem;
+    color: $accent;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    @include smooth-transition;
+    
+    &:hover {
+      background: $accent;
+      color: $background-dark;
+    }
+  }
+}
