@@ -156,6 +156,32 @@
     overflow: hidden;
     background: #000;
     
+    .camera-close-btn {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      width: 44px;
+      height: 44px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      z-index: 20;
+      @include smooth-transition;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      
+      &:hover, &:active {
+        background: rgba($danger, 0.8);
+        transform: scale(1.05);
+      }
+    }
+    
     .camera-feed {
       width: 100%;
       height: 100%;

@@ -149,6 +149,10 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
           {camera.cameraMode && !imageData ? (
             // Live camera view
             <div className="camera-view">
+              {/* Close button in camera view */}
+              <button className="camera-close-btn" onClick={handleClose}>
+                <FaTimes />
+              </button>
               <video 
                 ref={camera.videoRef} 
                 playsInline 
