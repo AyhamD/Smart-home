@@ -10,10 +10,16 @@
   background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(10px);
   z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  // Make the overlay itself scrollable
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   padding: 1rem;
+  
+  // Center content but allow scroll
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
 }
 
 .receipt-scanner {
@@ -21,14 +27,14 @@
   border-radius: 1rem;
   width: 100%;
   max-width: 500px;
-  max-height: 90vh;
+  // No max-height - let it grow and scroll with overlay
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  margin: auto 0; // Center vertically when content is small
   
   @media (max-width: 600px) {
-    max-height: calc(100vh - 2rem);
-    max-height: calc(100dvh - 2rem); // Dynamic viewport height for mobile
+    border-radius: 0.75rem;
+    margin: 0;
   }
   
   .scanner-header {
@@ -37,7 +43,6 @@
     align-items: center;
     padding: 1rem 1.25rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    flex-shrink: 0;
     
     h3 {
       display: flex;
@@ -74,25 +79,20 @@
   
   .scanner-content {
     padding: 1.25rem;
-    flex: 1;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
-    min-height: 0; // Important for flex scroll
+    // No overflow - let parent overlay handle scrolling
     
     @media (max-width: 600px) {
       padding: 1rem;
     }
   }
   
-  // Fixed footer with action buttons - always visible
+  // Footer with action buttons
   .scanner-footer {
     display: flex;
     gap: 0.75rem;
     padding: 1rem 1.25rem;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     background: $background-dark;
-    flex-shrink: 0;
     
     @media (max-width: 600px) {
       padding: 0.875rem 1rem;
