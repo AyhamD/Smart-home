@@ -11,7 +11,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt', // Changed from autoUpdate - user will be prompted to update
       includeAssets: ['favicon.ico', 'apple-touch-icon.svg', 'pwa-192x192.svg', 'pwa-512x512.svg'],
       manifest: {
         name: 'Hue Control',
@@ -75,7 +75,7 @@ export default defineConfig({
         ]
       },
       devOptions: {
-        enabled: true
+        enabled: false // Disabled in dev to prevent constant reloads
       }
     })
   ],

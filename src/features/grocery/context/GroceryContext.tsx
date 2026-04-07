@@ -78,7 +78,7 @@ interface GroceryContextType {
 const GroceryContext = createContext<GroceryContextType | undefined>(undefined);
 
 const STORAGE_KEY = "hue_control_grocery_weeks";
-const SYNC_DEBOUNCE_MS = 2000;
+const SYNC_DEBOUNCE_MS = 5000; // Increased from 2s to 5s to reduce refresh frequency
 
 // Helper: Get week number (ISO week, Monday-based)
 const getWeekNumber = (date: Date): { weekNumber: number; year: number } => {
@@ -328,7 +328,7 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({
     };
 
     checkNetwork();
-    const interval = setInterval(checkNetwork, 30000);
+    const interval = setInterval(checkNetwork, 60000); // Check every 60s instead of 30s
     return () => clearInterval(interval);
   }, []);
 
