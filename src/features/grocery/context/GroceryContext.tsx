@@ -25,10 +25,19 @@ export interface GroceryWeek {
   startDate: string; // Monday
   endDate: string; // Saturday
   items: GroceryItem[];
+  finalized?: boolean; // True when week is closed and deducted from budget
+  finalTotal?: number; // Locked total when finalized
+}
+
+export interface MonthlyBudget {
+  monthId: string; // Format: "2026-04"
+  totalBudget: number;
+  spent: number; // Sum of finalized weeks' totals
 }
 
 export interface GroceryData {
   weeks: GroceryWeek[];
+  budgets: MonthlyBudget[];
 }
 
 interface GroceryContextType {
@@ -40,6 +49,12 @@ interface GroceryContextType {
   updateItemPrice: (weekId: string, itemId: string, price: number) => void;
   clearBought: (weekId: string) => void;
   getWeekTotal: (weekId: string) => number;
+  // Budget functions
+  currentBudget: MonthlyBudget | null;
+  setBudget: (amount: number) => void;
+  finalizeWeek: (weekId: string) => void;
+  getRemainingBudget: () => number;
+  canAddToWeek: (weekId: string) => boolean;
   isAtHome: boolean;
   checkingNetwork: boolean;
   syncing: boolean;
@@ -106,10 +121,30 @@ const getCurrentWeekData = (): GroceryWeek => {
   return createWeekForDate(new Date());
 };
 
+// Helper: Get current month ID (e.g., "2026-04")
+const getCurrentMonthId = (): string => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+};
+
+// Helper: Get month ID for a week
+const getMonthIdForWeek = (weekId: string): string => {
+  // weekId format: "2026-W14" - need to figure out the month from year/week
+  const [year, weekPart] = weekId.split('-');
+  const weekNum = parseInt(weekPart.replace('W', ''));
+  // Approximate: week 1-4 = Jan, 5-8 = Feb, etc.
+  // More accurate: use ISO week to date conversion
+  const jan4 = new Date(parseInt(year), 0, 4);
+  const daysToAdd = (weekNum - 1) * 7;
+  const weekDate = new Date(jan4.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
+  return `${weekDate.getFullYear()}-${String(weekDate.getMonth() + 1).padStart(2, '0')}`;
+};
+
 export const GroceryProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [weeks, setWeeks] = useState<GroceryWeek[]>([]);
+  const [budgets, setBudgets] = useState<MonthlyBudget[]>([]);
   const [isAtHome, setIsAtHome] = useState(false);
   const [checkingNetwork, setCheckingNetwork] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -121,6 +156,9 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({
   // Get or create current week
   const currentWeek =
     weeks.find((w) => w.weekId === getCurrentWeekData().weekId) || null;
+
+  // Get current month's budget
+  const currentBudget = budgets.find(b => b.monthId === getCurrentMonthId()) || null;
 
   // Ensure current week exists
   useEffect(() => {
@@ -145,6 +183,9 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({
           if (data.weeks) {
             setWeeks(data.weeks);
           }
+          if (data.budgets) {
+            setBudgets(data.budgets);
+          }
         } catch (e) {
           console.error("Failed to parse grocery data:", e);
         }
@@ -156,6 +197,9 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({
         const gistData = await gistStorage.load<GroceryData>();
         if (gistData?.weeks) {
           setWeeks(gistData.weeks);
+          if (gistData.budgets) {
+            setBudgets(gistData.budgets);
+          }
           localStorage.setItem(STORAGE_KEY, JSON.stringify(gistData));
           setLastSynced(new Date());
         }
@@ -169,11 +213,11 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({
   }, []);
 
   // Sync to Gist with debounce
-  const syncToGist = useCallback(async (weeksToSync: GroceryWeek[]) => {
+  const syncToGist = useCallback(async (dataToSync: GroceryData) => {
     if (!gistStorage.isConfigured()) return;
 
     setSyncing(true);
-    const success = await gistStorage.save<GroceryData>({ weeks: weeksToSync });
+    const success = await gistStorage.save<GroceryData>(dataToSync);
     if (success) {
       setLastSynced(new Date());
     }
@@ -184,7 +228,7 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({
   useEffect(() => {
     if (!initialized) return;
 
-    const data: GroceryData = { weeks };
+    const data: GroceryData = { weeks, budgets };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 
     if (syncTimeoutRef.current) {
@@ -192,7 +236,7 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({
     }
 
     syncTimeoutRef.current = setTimeout(() => {
-      syncToGist(weeks);
+      syncToGist(data);
     }, SYNC_DEBOUNCE_MS);
 
     return () => {
@@ -200,7 +244,7 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({
         clearTimeout(syncTimeoutRef.current);
       }
     };
-  }, [weeks, initialized, syncToGist]);
+  }, [weeks, budgets, initialized, syncToGist]);
 
   // Manual sync
   const syncNow = useCallback(async () => {
@@ -371,9 +415,80 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({
   const getWeekTotal = (weekId: string): number => {
     const week = weeks.find((w) => w.weekId === weekId);
     if (!week) return 0;
+    // If finalized, return the locked total
+    if (week.finalized && week.finalTotal !== undefined) {
+      return week.finalTotal;
+    }
     return week.items
       .filter((item) => item.bought && item.price !== null)
       .reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
+  };
+
+  // Budget functions
+  const setBudgetAmount = (amount: number) => {
+    const monthId = getCurrentMonthId();
+    setBudgets(prev => {
+      const existing = prev.find(b => b.monthId === monthId);
+      if (existing) {
+        return prev.map(b => 
+          b.monthId === monthId ? { ...b, totalBudget: amount } : b
+        );
+      } else {
+        return [...prev, { monthId, totalBudget: amount, spent: 0 }];
+      }
+    });
+  };
+
+  const finalizeWeek = (weekId: string) => {
+    const week = weeks.find(w => w.weekId === weekId);
+    if (!week || week.finalized) return;
+
+    const total = getWeekTotal(weekId);
+    const monthId = getMonthIdForWeek(weekId);
+
+    // Lock the week with its final total
+    setWeeks(prev => 
+      prev.map(w => 
+        w.weekId === weekId 
+          ? { ...w, finalized: true, finalTotal: total }
+          : w
+      )
+    );
+
+    // Add to spent in the month's budget
+    setBudgets(prev => {
+      const existing = prev.find(b => b.monthId === monthId);
+      if (existing) {
+        return prev.map(b => 
+          b.monthId === monthId ? { ...b, spent: b.spent + total } : b
+        );
+      } else {
+        // Create budget for this month if it doesn't exist
+        return [...prev, { monthId, totalBudget: 0, spent: total }];
+      }
+    });
+  };
+
+  const getRemainingBudget = (): number => {
+    const monthId = getCurrentMonthId();
+    const budget = budgets.find(b => b.monthId === monthId);
+    if (!budget) return 0;
+    
+    // Also consider non-finalized weeks in current month
+    const currentMonthWeeks = weeks.filter(w => getMonthIdForWeek(w.weekId) === monthId && !w.finalized);
+    const pendingSpend = currentMonthWeeks.reduce((sum, w) => sum + getWeekTotal(w.weekId), 0);
+    
+    return budget.totalBudget - budget.spent - pendingSpend;
+  };
+
+  const canAddToWeek = (weekId: string): boolean => {
+    const week = weeks.find(w => w.weekId === weekId);
+    if (!week) return true;
+    if (week.finalized) return false;
+    
+    // Check if there's budget remaining
+    const remaining = getRemainingBudget();
+    return remaining > 0 || !currentBudget || currentBudget.totalBudget === 0;
   };
 
   return (
@@ -387,6 +502,11 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({
         updateItemPrice,
         clearBought,
         getWeekTotal,
+        currentBudget,
+        setBudget: setBudgetAmount,
+        finalizeWeek,
+        getRemainingBudget,
+        canAddToWeek,
         isAtHome,
         checkingNetwork,
         syncing,

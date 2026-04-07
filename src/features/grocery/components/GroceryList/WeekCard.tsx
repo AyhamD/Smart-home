@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
-import { FaCalendarWeek, FaChevronUp, FaChevronDown, FaTrash, FaCheck } from "react-icons/fa";
+import { FaCalendarWeek, FaChevronUp, FaChevronDown, FaTrash, FaCheck, FaLock } from "react-icons/fa";
 import { GroceryWeek, useGrocery } from "../../context/GroceryContext";
 
 interface WeekCardProps {
@@ -10,7 +10,7 @@ interface WeekCardProps {
 
 
 export const WeekCard: React.FC<WeekCardProps> = ({ week, isCurrentWeek }) => {
-  const { toggleBought, removeItem, clearBought, updateItemPrice, getWeekTotal } = useGrocery();
+  const { toggleBought, removeItem, clearBought, updateItemPrice, getWeekTotal, finalizeWeek } = useGrocery();
   const [expanded, setExpanded] = useState(isCurrentWeek);
   const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
   const [priceInput, setPriceInput] = useState('');
@@ -18,6 +18,7 @@ export const WeekCard: React.FC<WeekCardProps> = ({ week, isCurrentWeek }) => {
   const unboughtItems = week.items.filter(item => !item.bought);
   const boughtItems = week.items.filter(item => item.bought);
   const weekTotal = getWeekTotal(week.weekId);
+  const isFinalized = week.finalized;
 
   const handleSavePrice = (itemId: string) => {
     const amount = parseFloat(priceInput);
@@ -30,7 +31,7 @@ export const WeekCard: React.FC<WeekCardProps> = ({ week, isCurrentWeek }) => {
 
   return (
     <motion.div 
-      className={`week-card ${isCurrentWeek ? 'current' : ''}`}
+      className={`week-card ${isCurrentWeek ? 'current' : ''} ${isFinalized ? 'finalized' : ''}`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
@@ -42,13 +43,14 @@ export const WeekCard: React.FC<WeekCardProps> = ({ week, isCurrentWeek }) => {
             <span className="week-dates">{week.startDate} - {week.endDate}</span>
           </div>
           {isCurrentWeek && <span className="current-badge">Current</span>}
+          {isFinalized && <span className="finalized-badge"><FaLock /> Closed</span>}
         </div>
         <div className="week-summary">
           <div className="week-total">
             {weekTotal > 0 ? (
-              <span className="total-amount">€{weekTotal?.toFixed(2)}</span>
+              <span className="total-amount">{weekTotal?.toFixed(2)} kr</span>
             ) : (
-              <span className="total-pending">€0.00</span>
+              <span className="total-pending">0.00 kr</span>
             )}
           </div>
           <span className="item-count">{week.items.length} items</span>
@@ -125,8 +127,9 @@ export const WeekCard: React.FC<WeekCardProps> = ({ week, isCurrentWeek }) => {
                     >
                       <button
                         className="item-check checked"
-                        onClick={() => toggleBought(week.weekId, item.id)}
+                        onClick={() => !isFinalized && toggleBought(week.weekId, item.id)}
                         aria-label="Mark as not bought"
+                        disabled={isFinalized}
                       >
                         <div className="check-circle">
                           <FaCheck />
@@ -139,7 +142,7 @@ export const WeekCard: React.FC<WeekCardProps> = ({ week, isCurrentWeek }) => {
                         )}
                       </div>
                       <div className="item-price">
-                        {editingPriceId === item.id ? (
+                        {editingPriceId === item.id && !isFinalized ? (
                           <div className="price-input-group">
                             <input
                               type="number"
@@ -163,18 +166,22 @@ export const WeekCard: React.FC<WeekCardProps> = ({ week, isCurrentWeek }) => {
                           <button
                             className="edit-price-btn"
                             onClick={() => {
-                              setPriceInput(item.price?.toString() || '');
-                              setEditingPriceId(item.id);
+                              if (!isFinalized) {
+                                setPriceInput(item.price?.toString() || '');
+                                setEditingPriceId(item.id);
+                              }
                             }}
+                            disabled={isFinalized}
                           >
-                            {item.price !== null ? `€${item.price?.toFixed(2)}` : 'Add price'}
+                            {item.price !== null ? `${item.price?.toFixed(2)} kr` : 'Add price'}
                           </button>
                         )}
                       </div>
                       <button
                         className="item-delete"
-                        onClick={() => removeItem(week.weekId, item.id)}
+                        onClick={() => !isFinalized && removeItem(week.weekId, item.id)}
                         aria-label="Delete item"
+                        disabled={isFinalized}
                       >
                         <FaTrash />
                       </button>
@@ -183,6 +190,23 @@ export const WeekCard: React.FC<WeekCardProps> = ({ week, isCurrentWeek }) => {
                 </div>
               )}
             </div>
+
+            {/* Finalize Week Button */}
+            {!isFinalized && boughtItems.length > 0 && (
+              <div className="finalize-section">
+                <button 
+                  className="finalize-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (window.confirm(`Finalize week ${week.weekNumber}? This will lock the total (${weekTotal.toFixed(2)} kr) and deduct it from your monthly budget.`)) {
+                      finalizeWeek(week.weekId);
+                    }
+                  }}
+                >
+                  <FaLock /> Close Week & Deduct from Budget
+                </button>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
