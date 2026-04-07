@@ -18,6 +18,14 @@ export interface GroceryItem {
   createdAt: number;
 }
 
+export interface Receipt {
+  id: string;
+  imageData: string; // Base64 encoded image
+  scannedTotal: number | null;
+  rawText: string; // OCR extracted text
+  addedAt: number;
+}
+
 export interface GroceryWeek {
   weekId: string; // Format: "2026-W13"
   weekNumber: number;
@@ -25,6 +33,7 @@ export interface GroceryWeek {
   startDate: string; // Monday
   endDate: string; // Saturday
   items: GroceryItem[];
+  receipts?: Receipt[]; // Scanned receipts for this week
   finalized?: boolean; // True when week is closed and deducted from budget
   finalTotal?: number; // Locked total when finalized
 }
@@ -44,11 +53,15 @@ interface GroceryContextType {
   weeks: GroceryWeek[];
   currentWeek: GroceryWeek | null;
   addItem: (name: string, quantity?: number, price?: number | null) => void;
+  addScannedItems: (weekId: string, items: { name: string; price: number; quantity: number }[]) => void;
   removeItem: (weekId: string, itemId: string) => void;
   toggleBought: (weekId: string, itemId: string) => void;
   updateItemPrice: (weekId: string, itemId: string, price: number) => void;
   clearBought: (weekId: string) => void;
   getWeekTotal: (weekId: string) => number;
+  // Receipt functions
+  addReceipt: (weekId: string, imageData: string, scannedTotal: number | null, rawText: string) => void;
+  removeReceipt: (weekId: string, receiptId: string) => void;
   // Budget functions
   currentBudget: MonthlyBudget | null;
   setBudget: (amount: number) => void;
@@ -362,6 +375,47 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({
     });
   };
 
+  // Add scanned items from receipt as bought items
+  const addScannedItems = (
+    weekId: string,
+    items: { name: string; price: number; quantity: number }[]
+  ) => {
+    const newItems: GroceryItem[] = items.map((item, index) => ({
+      id: Date.now().toString() + index,
+      name: item.name.trim(),
+      quantity: item.quantity,
+      price: item.price,
+      bought: true, // Scanned items are already bought
+      createdAt: Date.now(),
+    }));
+
+    setWeeks((prev) => {
+      const weekIndex = prev.findIndex((w) => w.weekId === weekId);
+
+      if (weekIndex >= 0) {
+        const updated = [...prev];
+        updated[weekIndex] = {
+          ...updated[weekIndex],
+          items: [...newItems, ...updated[weekIndex].items],
+        };
+        return updated;
+      } else {
+        // If week doesn't exist, create it
+        const currentWeekData = getCurrentWeekData();
+        if (currentWeekData.weekId === weekId) {
+          return [
+            {
+              ...currentWeekData,
+              items: newItems,
+            },
+            ...prev,
+          ];
+        }
+        return prev;
+      }
+    });
+  };
+
   const removeItem = (weekId: string, itemId: string) => {
     setWeeks((prev) =>
       prev.map((week) =>
@@ -422,6 +476,35 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({
     return week.items
       .filter((item) => item.bought && item.price !== null)
       .reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
+  };
+
+  // Receipt functions
+  const addReceipt = (weekId: string, imageData: string, scannedTotal: number | null, rawText: string) => {
+    const newReceipt: Receipt = {
+      id: Date.now().toString(),
+      imageData,
+      scannedTotal,
+      rawText,
+      addedAt: Date.now(),
+    };
+
+    setWeeks(prev =>
+      prev.map(week =>
+        week.weekId === weekId
+          ? { ...week, receipts: [...(week.receipts || []), newReceipt] }
+          : week
+      )
+    );
+  };
+
+  const removeReceipt = (weekId: string, receiptId: string) => {
+    setWeeks(prev =>
+      prev.map(week =>
+        week.weekId === weekId
+          ? { ...week, receipts: (week.receipts || []).filter(r => r.id !== receiptId) }
+          : week
+      )
+    );
   };
 
   // Budget functions
@@ -497,11 +580,14 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({
         weeks,
         currentWeek,
         addItem,
+        addScannedItems,
         removeItem,
         toggleBought,
         updateItemPrice,
         clearBought,
         getWeekTotal,
+        addReceipt,
+        removeReceipt,
         currentBudget,
         setBudget: setBudgetAmount,
         finalizeWeek,
