@@ -1,6 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createWorker } from 'tesseract.js';
-import { FaCamera, FaReceipt, FaSpinner, FaTimes, FaCheck, FaEdit, FaPlus, FaTrash, FaShoppingCart } from 'react-icons/fa';
+import { FaCamera, FaReceipt, FaSpinner, FaTimes, FaCheck, FaEdit, FaPlus, FaTrash, FaShoppingCart, FaImage, FaSyncAlt } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export interface ParsedItem {
@@ -33,6 +33,161 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
   const [activeTab, setActiveTab] = useState<'total' | 'items'>('items');
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Camera state
+  const [cameraMode, setCameraMode] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  // Start camera stream
+  const startCamera = useCallback(async () => {
+    setCameraError(null);
+    try {
+      // Stop any existing stream
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+
+      const constraints: MediaStreamConstraints = {
+        video: {
+          facingMode: facingMode,
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+        },
+        audio: false,
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      streamRef.current = stream;
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+      setCameraMode(true);
+    } catch (err) {
+      console.error('Camera error:', err);
+      setCameraError('Could not access camera. Please use file upload instead.');
+      setCameraMode(false);
+    }
+  }, [facingMode]);
+
+  // Stop camera stream
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setCameraMode(false);
+  }, []);
+
+  // Switch camera (front/back)
+  const switchCamera = useCallback(async () => {
+    setFacingMode(prev => prev === 'environment' ? 'user' : 'environment');
+  }, []);
+
+  // Restart camera when facing mode changes
+  useEffect(() => {
+    if (cameraMode) {
+      startCamera();
+    }
+  }, [facingMode]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
+
+  // Capture photo from video feed
+  const capturePhoto = useCallback(() => {
+    if (!videoRef.current || !canvasRef.current) return;
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Set canvas dimensions to match video
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    // Draw video frame to canvas
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // Apply image preprocessing for better OCR
+    const imageDataObj = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageDataObj.data;
+    
+    // Convert to grayscale and increase contrast
+    for (let i = 0; i < data.length; i += 4) {
+      const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+      // Increase contrast
+      const contrast = 1.5;
+      const factor = (259 * (contrast * 100 + 255)) / (255 * (259 - contrast * 100));
+      const newGray = Math.min(255, Math.max(0, factor * (gray - 128) + 128));
+      // Apply thresholding for cleaner text
+      const threshold = newGray > 140 ? 255 : 0;
+      data[i] = threshold;
+      data[i + 1] = threshold;
+      data[i + 2] = threshold;
+    }
+    
+    ctx.putImageData(imageDataObj, 0, 0);
+
+    // Get data URL and process
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+    
+    // Stop camera and process image
+    stopCamera();
+    setImageData(dataUrl);
+    performOCR(dataUrl);
+  }, [stopCamera]);
+
+  // Preprocess image for better OCR
+  const preprocessImage = (imageDataUrl: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(imageDataUrl);
+          return;
+        }
+
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+
+        // Get image data
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imgData.data;
+
+        // Convert to grayscale and boost contrast
+        for (let i = 0; i < data.length; i += 4) {
+          const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+          // Contrast enhancement
+          const contrast = 1.4;
+          const factor = (259 * (contrast * 100 + 255)) / (255 * (259 - contrast * 100));
+          const newGray = Math.min(255, Math.max(0, factor * (gray - 128) + 128));
+          data[i] = newGray;
+          data[i + 1] = newGray;
+          data[i + 2] = newGray;
+        }
+
+        ctx.putImageData(imgData, 0, 0);
+        resolve(canvas.toDataURL('image/jpeg', 0.95));
+      };
+      img.src = imageDataUrl;
+    });
+  };
 
   // Parse individual items from receipt text
   const parseItems = (text: string): ParsedItem[] => {
@@ -149,8 +304,10 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
     const reader = new FileReader();
     reader.onload = async (event) => {
       const dataUrl = event.target?.result as string;
-      setImageData(dataUrl);
-      await performOCR(dataUrl);
+      // Preprocess the image for better OCR
+      const processedImage = await preprocessImage(dataUrl);
+      setImageData(processedImage);
+      await performOCR(processedImage);
     };
     reader.readAsDataURL(file);
   };
@@ -166,6 +323,12 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
             setProgress(Math.round(m.progress * 100));
           }
         },
+      });
+
+      // Apply additional options for better receipt scanning
+      await worker.setParameters({
+        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖabcdefghijklmnopqrstuvwxyzåäö0123456789.,:-/() ',
+        tessedit_pageseg_mode: 6 as any, // Assume uniform block of text
       });
 
       const { data: { text } } = await worker.recognize(imageDataUrl);
@@ -245,35 +408,79 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <motion.div 
         className="receipt-scanner"
         initial={{ scale: 0.9, y: 20 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.9, y: 20 }}
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="scanner-header">
           <h3><FaReceipt /> Scan Receipt</h3>
-          <button className="close-btn" onClick={onClose}>
+          <button className="close-btn" onClick={() => { stopCamera(); onClose(); }}>
             <FaTimes />
           </button>
         </div>
 
         <div className="scanner-content">
-          {!imageData ? (
+          {/* Hidden canvas for photo capture */}
+          <canvas ref={canvasRef} style={{ display: 'none' }} />
+          
+          {cameraMode && !imageData ? (
+            // Live camera view
+            <div className="camera-view">
+              <video 
+                ref={videoRef} 
+                playsInline 
+                autoPlay 
+                muted
+                className="camera-feed"
+              />
+              <div className="camera-overlay">
+                <div className="scan-guide">
+                  <span>Position receipt within frame</span>
+                </div>
+              </div>
+              <div className="camera-controls">
+                <button className="switch-camera-btn" onClick={switchCamera}>
+                  <FaSyncAlt />
+                </button>
+                <button className="capture-photo-btn" onClick={capturePhoto}>
+                  <FaCamera />
+                </button>
+                <button className="cancel-camera-btn" onClick={stopCamera}>
+                  <FaTimes />
+                </button>
+              </div>
+            </div>
+          ) : !imageData ? (
             <div className="capture-section">
               <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
-                capture="environment"
                 onChange={handleFileSelect}
                 style={{ display: 'none' }}
               />
-              <button className="capture-btn" onClick={triggerFileInput}>
-                <FaCamera />
-                <span>Take Photo or Upload</span>
-              </button>
+              
+              {cameraError && (
+                <div className="camera-error">
+                  <p>{cameraError}</p>
+                </div>
+              )}
+              
+              <div className="capture-options">
+                <button className="capture-btn camera" onClick={startCamera}>
+                  <FaCamera />
+                  <span>Use Camera</span>
+                </button>
+                <button className="capture-btn gallery" onClick={triggerFileInput}>
+                  <FaImage />
+                  <span>Choose Photo</span>
+                </button>
+              </div>
               <p className="hint">Scan a receipt to extract items with prices</p>
             </div>
           ) : (
