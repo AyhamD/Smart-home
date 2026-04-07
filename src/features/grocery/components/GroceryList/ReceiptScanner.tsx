@@ -182,11 +182,6 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
               )}
               
               <div className="capture-options">
-                <button className="capture-btn camera" onClick={camera.startCamera}>
-                  <FaCamera />
-                  <span>Use Camera</span>
-                </button>
-                
                 {/* Use label for better mobile file input support */}
                 <label className="capture-btn gallery">
                   <input

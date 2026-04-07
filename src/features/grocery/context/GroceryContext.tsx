@@ -478,9 +478,17 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({
     if (week.finalized && week.finalTotal !== undefined) {
       return week.finalTotal;
     }
-    return week.items
+    // Sum items total
+    const itemsTotal = week.items
       .filter((item) => item.bought && item.price !== null)
       .reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
+    
+    // Sum receipts total (for receipts without corresponding items)
+    const receiptsTotal = (week.receipts || [])
+      .filter(r => r.scannedTotal !== null && r.scannedTotal > 0)
+      .reduce((sum, r) => sum + (r.scannedTotal || 0), 0);
+    
+    return itemsTotal + receiptsTotal;
   };
 
   // Receipt functions
