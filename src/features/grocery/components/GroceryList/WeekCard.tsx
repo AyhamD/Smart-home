@@ -48,7 +48,8 @@ export const WeekCard: React.FC<WeekCardProps> = ({ week, isCurrentWeek }) => {
     } catch (error) {
       console.error('Error completing scan:', error);
     }
-    // Modal closes itself via onClose
+    // Close the modal after processing
+    setShowScanner(false);
   };
 
   const handleAddItems = (data: AddItemsData) => {
@@ -69,7 +70,8 @@ export const WeekCard: React.FC<WeekCardProps> = ({ week, isCurrentWeek }) => {
     } catch (error) {
       console.error('Error adding items:', error);
     }
-    // Modal closes itself via onClose
+    // Close the modal after processing
+    setShowScanner(false);
   };
 
   return (
