@@ -19,46 +19,79 @@ const FOLDER_ID = '1QpWtXFqAZbLzpqxO_2pd4nl7H8sFFJZJ';
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
-    const base64Image = data.image;
-    const fileName = data.fileName || `receipt_${new Date().getTime()}.jpg`;
-    const weekId = data.weekId || 'unknown';
     
-    // Get the folder
-    const folder = DriveApp.getFolderById(FOLDER_ID);
-    
-    // Create a subfolder for the week if it doesn't exist
-    let weekFolder;
-    const weekFolders = folder.getFoldersByName(weekId);
-    if (weekFolders.hasNext()) {
-      weekFolder = weekFolders.next();
-    } else {
-      weekFolder = folder.createFolder(weekId);
+    // Handle delete action
+    if (data.action === 'delete') {
+      return deleteFile(data.fileId);
     }
     
-    // Decode base64 and create the file
-    const imageData = base64Image.replace(/^data:image\/\w+;base64,/, '');
-    const blob = Utilities.newBlob(Utilities.base64Decode(imageData), 'image/jpeg', fileName);
-    const file = weekFolder.createFile(blob);
+    // Handle upload action (default)
+    return uploadFile(data);
     
-    // Make it accessible via link
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    
-    const result = {
-      success: true,
-      fileId: file.getId(),
-      url: file.getUrl(),
-      directUrl: `https://drive.google.com/uc?export=view&id=${file.getId()}`
-    };
-    
-    return ContentService
-      .createTextOutput(JSON.stringify(result))
-      .setMimeType(ContentService.MimeType.JSON);
-      
   } catch (error) {
     return ContentService
       .createTextOutput(JSON.stringify({
         success: false,
         error: error.toString()
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function uploadFile(data) {
+  const base64Image = data.image;
+  const fileName = data.fileName || `receipt_${new Date().getTime()}.jpg`;
+  const weekId = data.weekId || 'unknown';
+  
+  // Get the folder
+  const folder = DriveApp.getFolderById(FOLDER_ID);
+  
+  // Create a subfolder for the week if it doesn't exist
+  let weekFolder;
+  const weekFolders = folder.getFoldersByName(weekId);
+  if (weekFolders.hasNext()) {
+    weekFolder = weekFolders.next();
+  } else {
+    weekFolder = folder.createFolder(weekId);
+  }
+  
+  // Decode base64 and create the file
+  const imageData = base64Image.replace(/^data:image\/\w+;base64,/, '');
+  const blob = Utilities.newBlob(Utilities.base64Decode(imageData), 'image/jpeg', fileName);
+  const file = weekFolder.createFile(blob);
+  
+  // Make it accessible via link
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  
+  const fileId = file.getId();
+  const result = {
+    success: true,
+    fileId: fileId,
+    url: file.getUrl(),
+    // Use lh3.googleusercontent.com format - works directly in <img> tags
+    directUrl: `https://lh3.googleusercontent.com/d/${fileId}`
+  };
+  
+  return ContentService
+    .createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function deleteFile(fileId) {
+  try {
+    const file = DriveApp.getFileById(fileId);
+    file.setTrashed(true);
+    
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        success: true
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (error) {
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        success: false,
+        error: 'File not found or already deleted'
       }))
       .setMimeType(ContentService.MimeType.JSON);
   }

@@ -8,7 +8,7 @@ import React, {
   ReactNode,
 } from "react";
 import { gistStorage } from "../services/gist-storage";
-import { uploadReceiptImage, isDriveConfigured } from "../services/drive-storage";
+import { uploadReceiptImage, isDriveConfigured, deleteReceiptImage, isDriveUrl } from "../services/drive-storage";
 
 export interface GroceryItem {
   id: string;
@@ -63,7 +63,7 @@ interface GroceryContextType {
   getWeekTotal: (weekId: string) => number;
   // Receipt functions
   addReceipt: (weekId: string, imageData: string, scannedTotal: number | null, rawText: string, store?: string) => Promise<void>;
-  removeReceipt: (weekId: string, receiptId: string) => void;
+  removeReceipt: (weekId: string, receiptId: string) => Promise<void>;
   // Budget functions
   currentBudget: MonthlyBudget | null;
   setBudget: (amount: number) => void;
@@ -611,10 +611,10 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({
       if (isDriveConfigured() && imageData) {
         console.log('[Receipt] Attempting Google Drive upload...');
         try {
-          const driveUrl = await uploadReceiptImage(imageData, weekId, receiptNumber);
-          if (driveUrl) {
-            console.log('[Receipt] Saved to Google Drive:', driveUrl);
-            finalImageData = driveUrl; // Store the URL instead of base64
+          const result = await uploadReceiptImage(imageData, weekId, receiptNumber);
+          if (result) {
+            console.log('[Receipt] Saved to Google Drive:', result.url);
+            finalImageData = result.url; // Store the URL instead of base64
           } else {
             console.log('[Receipt] Drive upload failed, falling back to compression');
           }
@@ -656,7 +656,21 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({
     }
   };
 
-  const removeReceipt = (weekId: string, receiptId: string) => {
+  const removeReceipt = async (weekId: string, receiptId: string) => {
+    // Find the receipt to get its image URL
+    const week = weeks.find(w => w.weekId === weekId);
+    const receipt = week?.receipts?.find(r => r.id === receiptId);
+    
+    // If it's a Drive URL, delete from Drive too
+    if (receipt?.imageData && isDriveUrl(receipt.imageData)) {
+      try {
+        await deleteReceiptImage(receipt.imageData);
+      } catch (e) {
+        console.warn('[Receipt] Failed to delete from Drive:', e);
+      }
+    }
+
+    // Remove from local state
     setWeeks(prev =>
       prev.map(week =>
         week.weekId === weekId
