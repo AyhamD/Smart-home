@@ -74,35 +74,72 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
   };
 
   const handleConfirmTotal = () => {
-    if (!imageData) return;
-    let finalTotal: number | null = null;
-    
-    if (manualTotal && manualTotal.trim() !== '') {
-      const parsed = parseFloat(manualTotal);
-      if (!isNaN(parsed)) {
-        finalTotal = parsed;
+    try {
+      if (!imageData) {
+        console.error('No image data for confirm total');
+        onClose();
+        return;
       }
-    } else if (ocr.detectedTotal !== null) {
-      finalTotal = ocr.detectedTotal;
+      
+      let finalTotal: number | null = null;
+      
+      if (manualTotal && String(manualTotal).trim() !== '') {
+        const parsed = parseFloat(String(manualTotal));
+        if (!isNaN(parsed) && isFinite(parsed)) {
+          finalTotal = parsed;
+        }
+      } else if (ocr.detectedTotal !== null && ocr.detectedTotal !== undefined) {
+        finalTotal = Number(ocr.detectedTotal);
+      }
+      
+      console.log('Confirming total:', finalTotal);
+      
+      // Parent will close the modal after processing
+      onScanComplete(
+        String(imageData),
+        finalTotal,
+        String(ocr.rawText || ''),
+        ocr.detectedStore ? String(ocr.detectedStore) : null
+      );
+    } catch (error) {
+      console.error('Error in handleConfirmTotal:', error);
+      onClose();
     }
-    
-    // Parent will close the modal after processing
-    onScanComplete(imageData, finalTotal, ocr.rawText, ocr.detectedStore);
   };
 
   const handleAddSelectedItems = () => {
-    if (!imageData) return;
-    const selectedItems = ocr.parsedItems.filter(item => item.selected);
-    if (selectedItems.length > 0 && onAddItems) {
-      // Pass all data to parent - parent will save receipt and items AND close modal
-      onAddItems({
-        items: selectedItems,
-        imageData,
-        rawText: ocr.rawText,
-        store: ocr.detectedStore,
-      });
-    } else {
-      // If no items to add, just close
+    try {
+      if (!imageData) {
+        console.error('No image data');
+        onClose();
+        return;
+      }
+      
+      const selectedItems = ocr.parsedItems ? ocr.parsedItems.filter(item => item && item.selected) : [];
+      
+      if (selectedItems.length > 0 && onAddItems) {
+        // Clone data to avoid reference issues
+        const dataToSend = {
+          items: selectedItems.map(item => ({
+            id: item.id,
+            name: String(item.name || ''),
+            price: Number(item.price) || 0,
+            quantity: Number(item.quantity) || 1,
+            selected: true,
+          })),
+          imageData: String(imageData),
+          rawText: String(ocr.rawText || ''),
+          store: ocr.detectedStore ? String(ocr.detectedStore) : null,
+        };
+        
+        console.log('Sending items:', dataToSend.items.length);
+        onAddItems(dataToSend);
+      } else {
+        console.log('No items selected, closing');
+        onClose();
+      }
+    } catch (error) {
+      console.error('Error in handleAddSelectedItems:', error);
       onClose();
     }
   };

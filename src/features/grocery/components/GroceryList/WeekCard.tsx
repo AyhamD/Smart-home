@@ -25,17 +25,18 @@ export const WeekCard: React.FC<WeekCardProps> = ({ week, isCurrentWeek }) => {
   const receipts = week.receipts || [];
 
   const handleScanComplete = (imageData: string, total: number | null, rawText: string, store: string | null) => {
+    console.log('handleScanComplete called', { hasImage: !!imageData, total });
     try {
       // Calculate receipt number based on existing receipts
-      const receiptNumber = (receipts.length || 0) + 1;
+      const receiptNumber = (receipts ? receipts.length : 0) + 1;
       
       // Only save receipt if we have image data
-      if (imageData) {
+      if (imageData && typeof imageData === 'string' && imageData.length > 0) {
         addReceipt(week.weekId, imageData, total, rawText || '', store || undefined);
       }
       
       // Add the total as a bought item so it shows in the list
-      if (total !== null && !isNaN(total) && total > 0) {
+      if (total !== null && typeof total === 'number' && !isNaN(total) && isFinite(total) && total > 0) {
         const itemName = store 
           ? `Kvitto #${receiptNumber} (${store})`
           : `Kvitto #${receiptNumber}`;
@@ -47,31 +48,46 @@ export const WeekCard: React.FC<WeekCardProps> = ({ week, isCurrentWeek }) => {
       }
     } catch (error) {
       console.error('Error completing scan:', error);
+    } finally {
+      // Always close the modal
+      setShowScanner(false);
     }
-    // Close the modal after processing
-    setShowScanner(false);
   };
 
   const handleAddItems = (data: AddItemsData) => {
+    console.log('handleAddItems called', { hasData: !!data, itemCount: data?.items?.length });
     try {
+      if (!data) {
+        console.error('No data received');
+        setShowScanner(false);
+        return;
+      }
+      
       // Save the receipt image first
-      if (data.imageData) {
+      if (data.imageData && typeof data.imageData === 'string' && data.imageData.length > 0) {
         addReceipt(week.weekId, data.imageData, null, data.rawText || '', data.store || undefined);
       }
       
-      // Add the items if there are any
-      if (data.items && data.items.length > 0) {
-        addScannedItems(week.weekId, data.items.map(item => ({
-          name: item.name || 'Unknown item',
-          price: item.price || 0,
-          quantity: item.quantity || 1,
-        })));
+      // Add the items if there are any valid ones
+      if (data.items && Array.isArray(data.items) && data.items.length > 0) {
+        const validItems = data.items
+          .filter(item => item && item.name)
+          .map(item => ({
+            name: String(item.name || 'Unknown item'),
+            price: Number(item.price) || 0,
+            quantity: Number(item.quantity) || 1,
+          }));
+        
+        if (validItems.length > 0) {
+          addScannedItems(week.weekId, validItems);
+        }
       }
     } catch (error) {
       console.error('Error adding items:', error);
+    } finally {
+      // Always close the modal
+      setShowScanner(false);
     }
-    // Close the modal after processing
-    setShowScanner(false);
   };
 
   return (
