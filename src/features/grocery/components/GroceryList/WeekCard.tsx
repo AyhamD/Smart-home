@@ -24,7 +24,7 @@ export const WeekCard: React.FC<WeekCardProps> = ({ week, isCurrentWeek }) => {
   const isFinalized = week.finalized;
   const receipts = week.receipts || [];
 
-  const handleScanComplete = (imageData: string, total: number | null, rawText: string, store: string | null) => {
+  const handleScanComplete = async (imageData: string, total: number | null, rawText: string, store: string | null) => {
     console.log('handleScanComplete called', { hasImage: !!imageData, total });
     try {
       // Calculate receipt number based on existing receipts
@@ -32,7 +32,7 @@ export const WeekCard: React.FC<WeekCardProps> = ({ week, isCurrentWeek }) => {
       
       // Only save receipt if we have image data
       if (imageData && typeof imageData === 'string' && imageData.length > 0) {
-        addReceipt(week.weekId, imageData, total, rawText || '', store || undefined);
+        await addReceipt(week.weekId, imageData, total, rawText || '', store || undefined);
       }
       
       // Add the total as a bought item so it shows in the list

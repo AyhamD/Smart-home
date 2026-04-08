@@ -92,35 +92,52 @@ const compressImage = (base64Image: string): Promise<string> => {
       return;
     }
 
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      let width = img.width;
-      let height = img.height;
+    try {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
 
-      // Scale down if too large
-      if (width > MAX_IMAGE_WIDTH) {
-        height = (height * MAX_IMAGE_WIDTH) / width;
-        width = MAX_IMAGE_WIDTH;
-      }
+          // Scale down if too large (also helps with iOS memory limits)
+          const maxDimension = Math.min(MAX_IMAGE_WIDTH, 600); // Smaller for iOS
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = (height * maxDimension) / width;
+              width = maxDimension;
+            } else {
+              width = (width * maxDimension) / height;
+              height = maxDimension;
+            }
+          }
 
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(img, 0, 0, width, height);
-        // Convert to JPEG with compression
-        const compressed = canvas.toDataURL('image/jpeg', IMAGE_QUALITY);
-        resolve(compressed);
-      } else {
+          canvas.width = Math.floor(width);
+          canvas.height = Math.floor(height);
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            // Convert to JPEG with compression
+            const compressed = canvas.toDataURL('image/jpeg', IMAGE_QUALITY);
+            resolve(compressed);
+          } else {
+            console.warn('[Compress] No canvas context');
+            resolve(base64Image);
+          }
+        } catch (e) {
+          console.warn('[Compress] Canvas error:', e);
+          resolve(base64Image);
+        }
+      };
+      img.onerror = () => {
+        console.warn('[Compress] Failed to load image');
         resolve(base64Image);
-      }
-    };
-    img.onerror = () => {
-      console.warn('Failed to compress image');
+      };
+      img.src = base64Image;
+    } catch (e) {
+      console.warn('[Compress] Error:', e);
       resolve(base64Image);
-    };
-    img.src = base64Image;
+    }
   });
 };
 
@@ -582,26 +599,38 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({
 
   // Receipt functions
   const addReceipt = async (weekId: string, imageData: string, scannedTotal: number | null, rawText: string, store?: string) => {
-    // Compress image to reduce storage size (iOS Safari has ~5MB localStorage limit)
-    const compressedImage = await compressImage(imageData);
-    console.log(`[Receipt] Original size: ${Math.round(imageData.length/1024)}KB, Compressed: ${Math.round(compressedImage.length/1024)}KB`);
+    try {
+      // Compress image to reduce storage size (iOS Safari has ~5MB localStorage limit)
+      let finalImageData = '';
+      try {
+        const compressedImage = await compressImage(imageData);
+        console.log(`[Receipt] Original size: ${Math.round(imageData.length/1024)}KB, Compressed: ${Math.round(compressedImage.length/1024)}KB`);
+        finalImageData = compressedImage;
+      } catch (e) {
+        console.warn('[Receipt] Compression failed, skipping image:', e);
+        // Skip image if compression fails
+        finalImageData = '';
+      }
 
-    const newReceipt: Receipt = {
-      id: Date.now().toString(),
-      imageData: compressedImage,
-      scannedTotal,
-      rawText,
-      store,
-      addedAt: Date.now(),
-    };
+      const newReceipt: Receipt = {
+        id: Date.now().toString(),
+        imageData: finalImageData,
+        scannedTotal,
+        rawText,
+        store,
+        addedAt: Date.now(),
+      };
 
-    setWeeks(prev =>
-      prev.map(week =>
-        week.weekId === weekId
-          ? { ...week, receipts: [...(week.receipts || []), newReceipt] }
-          : week
-      )
-    );
+      setWeeks(prev =>
+        prev.map(week =>
+          week.weekId === weekId
+            ? { ...week, receipts: [...(week.receipts || []), newReceipt] }
+            : week
+        )
+      );
+    } catch (e) {
+      console.error('[Receipt] Failed to add receipt:', e);
+    }
   };
 
   const removeReceipt = (weekId: string, receiptId: string) => {
