@@ -87,12 +87,13 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
     }
     
     onScanComplete(imageData, finalTotal, ocr.rawText, ocr.detectedStore);
+    onClose();
   };
 
   const handleAddSelectedItems = () => {
-    if (!onAddItems || !imageData) return;
+    if (!imageData) return;
     const selectedItems = ocr.parsedItems.filter(item => item.selected);
-    if (selectedItems.length > 0) {
+    if (selectedItems.length > 0 && onAddItems) {
       // Pass all data to parent - parent will save receipt and items
       onAddItems({
         items: selectedItems,
@@ -101,6 +102,8 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
         store: ocr.detectedStore,
       });
     }
+    // Always close the modal
+    onClose();
   };
 
   const toggleItemSelection = (id: string) => {

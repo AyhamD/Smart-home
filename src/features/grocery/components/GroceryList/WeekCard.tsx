@@ -25,39 +25,51 @@ export const WeekCard: React.FC<WeekCardProps> = ({ week, isCurrentWeek }) => {
   const receipts = week.receipts || [];
 
   const handleScanComplete = (imageData: string, total: number | null, rawText: string, store: string | null) => {
-    // Calculate receipt number based on existing receipts
-    const receiptNumber = (receipts.length || 0) + 1;
-    
-    // Only save receipt if we have image data
-    if (imageData) {
-      addReceipt(week.weekId, imageData, total, rawText, store || undefined);
+    try {
+      // Calculate receipt number based on existing receipts
+      const receiptNumber = (receipts.length || 0) + 1;
+      
+      // Only save receipt if we have image data
+      if (imageData) {
+        addReceipt(week.weekId, imageData, total, rawText || '', store || undefined);
+      }
+      
+      // Add the total as a bought item so it shows in the list
+      if (total !== null && !isNaN(total) && total > 0) {
+        const itemName = store 
+          ? `Kvitto #${receiptNumber} (${store})`
+          : `Kvitto #${receiptNumber}`;
+        addScannedItems(week.weekId, [{
+          name: itemName,
+          price: total,
+          quantity: 1,
+        }]);
+      }
+    } catch (error) {
+      console.error('Error completing scan:', error);
     }
-    
-    // Add the total as a bought item so it shows in the list
-    if (total !== null && !isNaN(total) && total > 0) {
-      const itemName = store 
-        ? `Kvitto #${receiptNumber} (${store})`
-        : `Kvitto #${receiptNumber}`;
-      addScannedItems(week.weekId, [{
-        name: itemName,
-        price: total,
-        quantity: 1,
-      }]);
-    }
-    setShowScanner(false);
+    // Modal closes itself via onClose
   };
 
   const handleAddItems = (data: AddItemsData) => {
-    // Save the receipt image first
-    addReceipt(week.weekId, data.imageData, null, data.rawText, data.store || undefined);
-    
-    // Add the items
-    addScannedItems(week.weekId, data.items.map(item => ({
-      name: item.name,
-      price: item.price,
-      quantity: item.quantity,
-    })));
-    setShowScanner(false);
+    try {
+      // Save the receipt image first
+      if (data.imageData) {
+        addReceipt(week.weekId, data.imageData, null, data.rawText || '', data.store || undefined);
+      }
+      
+      // Add the items if there are any
+      if (data.items && data.items.length > 0) {
+        addScannedItems(week.weekId, data.items.map(item => ({
+          name: item.name || 'Unknown item',
+          price: item.price || 0,
+          quantity: item.quantity || 1,
+        })));
+      }
+    } catch (error) {
+      console.error('Error adding items:', error);
+    }
+    // Modal closes itself via onClose
   };
 
   return (
