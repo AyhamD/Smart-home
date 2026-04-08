@@ -61,7 +61,7 @@ interface GroceryContextType {
   clearBought: (weekId: string) => void;
   getWeekTotal: (weekId: string) => number;
   // Receipt functions
-  addReceipt: (weekId: string, imageData: string, scannedTotal: number | null, rawText: string, store?: string) => void;
+  addReceipt: (weekId: string, imageData: string, scannedTotal: number | null, rawText: string, store?: string) => Promise<void>;
   removeReceipt: (weekId: string, receiptId: string) => void;
   // Budget functions
   currentBudget: MonthlyBudget | null;
@@ -80,6 +80,91 @@ const GroceryContext = createContext<GroceryContextType | undefined>(undefined);
 
 const STORAGE_KEY = "hue_control_grocery_weeks";
 const SYNC_DEBOUNCE_MS = 5000; // Increased from 2s to 5s to reduce refresh frequency
+const MAX_IMAGE_WIDTH = 800; // Max width for compressed receipt images
+const IMAGE_QUALITY = 0.6; // JPEG compression quality (0-1)
+
+// Helper: Compress image to reduce localStorage size (iOS Safari has ~5MB limit)
+const compressImage = (base64Image: string): Promise<string> => {
+  return new Promise((resolve) => {
+    // If not a valid base64 image, return as-is
+    if (!base64Image || !base64Image.startsWith('data:image')) {
+      resolve(base64Image);
+      return;
+    }
+
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+
+      // Scale down if too large
+      if (width > MAX_IMAGE_WIDTH) {
+        height = (height * MAX_IMAGE_WIDTH) / width;
+        width = MAX_IMAGE_WIDTH;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(img, 0, 0, width, height);
+        // Convert to JPEG with compression
+        const compressed = canvas.toDataURL('image/jpeg', IMAGE_QUALITY);
+        resolve(compressed);
+      } else {
+        resolve(base64Image);
+      }
+    };
+    img.onerror = () => {
+      console.warn('Failed to compress image');
+      resolve(base64Image);
+    };
+    img.src = base64Image;
+  });
+};
+
+// Helper: Safely save to localStorage with quota handling
+const safeLocalStorageSave = (key: string, data: unknown): boolean => {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+    return true;
+  } catch (e) {
+    if (e instanceof DOMException && (
+      e.name === 'QuotaExceededError' || 
+      e.name === 'NS_ERROR_DOM_QUOTA_REACHED'
+    )) {
+      console.warn('[Storage] Quota exceeded, clearing old receipt images...');
+      // Try to free up space by clearing receipt images from localStorage
+      // (Gist sync will still have the full data)
+      try {
+        const stored = localStorage.getItem(key);
+        if (stored) {
+          const parsed = JSON.parse(stored) as { weeks?: Array<{ receipts?: Array<{ imageData: string }> }> };
+          if (parsed.weeks) {
+            parsed.weeks.forEach(week => {
+              if (week.receipts) {
+                week.receipts.forEach(receipt => {
+                  receipt.imageData = ''; // Clear image data
+                });
+              }
+            });
+            localStorage.setItem(key, JSON.stringify(parsed));
+            // Now try to save the new data
+            localStorage.setItem(key, JSON.stringify(data));
+            return true;
+          }
+        }
+      } catch {
+        // If all else fails, clear storage entirely
+        localStorage.removeItem(key);
+        console.warn('[Storage] Cleared localStorage due to quota issues');
+      }
+    }
+    console.error('[Storage] Failed to save:', e);
+    return false;
+  }
+};
 
 // Helper: Get week number (ISO week, Monday-based)
 const getWeekNumber = (date: Date): { weekNumber: number; year: number } => {
@@ -214,7 +299,7 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({
           if (gistData.budgets) {
             setBudgets(gistData.budgets);
           }
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(gistData));
+          safeLocalStorageSave(STORAGE_KEY, gistData);
           setLastSynced(new Date());
         }
         setSyncing(false);
@@ -243,7 +328,7 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({
     if (!initialized) return;
 
     const data: GroceryData = { weeks, budgets };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    safeLocalStorageSave(STORAGE_KEY, data);
 
     if (syncTimeoutRef.current) {
       clearTimeout(syncTimeoutRef.current);
@@ -332,7 +417,7 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({
       if (gistData.budgets) {
         setBudgets(gistData.budgets);
       }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(gistData));
+      safeLocalStorageSave(STORAGE_KEY, gistData);
       setLastSynced(new Date());
     }
     setSyncing(false);
@@ -496,10 +581,14 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   // Receipt functions
-  const addReceipt = (weekId: string, imageData: string, scannedTotal: number | null, rawText: string, store?: string) => {
+  const addReceipt = async (weekId: string, imageData: string, scannedTotal: number | null, rawText: string, store?: string) => {
+    // Compress image to reduce storage size (iOS Safari has ~5MB localStorage limit)
+    const compressedImage = await compressImage(imageData);
+    console.log(`[Receipt] Original size: ${Math.round(imageData.length/1024)}KB, Compressed: ${Math.round(compressedImage.length/1024)}KB`);
+
     const newReceipt: Receipt = {
       id: Date.now().toString(),
-      imageData,
+      imageData: compressedImage,
       scannedTotal,
       rawText,
       store,
