@@ -6,6 +6,6 @@ export { AddItemForm } from './AddItemForm';
 export { GroceryItem } from './GroceryItem';
 export { BoughtItem } from './BoughtItem';
 export { BoughtSection } from './BoughtSection';
-export { ReceiptScanner, type ParsedItem } from './ReceiptScanner';
+export { ReceiptScanner, type ParsedItem, type AddItemsData } from './ReceiptScanner';
 export { ReceiptGallery } from './ReceiptGallery';
 export { AllReceiptsViewer } from './AllReceiptsViewer';

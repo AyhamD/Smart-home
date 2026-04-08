@@ -4,7 +4,7 @@ import { FaCalendarWeek, FaChevronUp, FaChevronDown, FaLock, FaCamera } from "re
 import { GroceryWeek, useGrocery } from "../../context/GroceryContext";
 import { GroceryItem } from "./GroceryItem";
 import { BoughtSection } from "./BoughtSection";
-import { ReceiptScanner, ParsedItem } from "./ReceiptScanner";
+import { ReceiptScanner, AddItemsData } from "./ReceiptScanner";
 import { ReceiptGallery } from "./ReceiptGallery";
 
 interface WeekCardProps {
@@ -47,8 +47,12 @@ export const WeekCard: React.FC<WeekCardProps> = ({ week, isCurrentWeek }) => {
     setShowScanner(false);
   };
 
-  const handleAddItems = (items: ParsedItem[]) => {
-    addScannedItems(week.weekId, items.map(item => ({
+  const handleAddItems = (data: AddItemsData) => {
+    // Save the receipt image first
+    addReceipt(week.weekId, data.imageData, null, data.rawText, data.store || undefined);
+    
+    // Add the items
+    addScannedItems(week.weekId, data.items.map(item => ({
       name: item.name,
       price: item.price,
       quantity: item.quantity,

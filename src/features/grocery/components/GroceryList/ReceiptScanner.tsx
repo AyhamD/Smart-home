@@ -7,9 +7,16 @@ import { useReceiptOCR, ParsedItem } from '../../hooks/useReceiptOCR';
 // Re-export ParsedItem for backwards compatibility
 export type { ParsedItem } from '../../hooks/useReceiptOCR';
 
+export interface AddItemsData {
+  items: ParsedItem[];
+  imageData: string;
+  rawText: string;
+  store: string | null;
+}
+
 interface ReceiptScannerProps {
   onScanComplete: (imageData: string, total: number | null, rawText: string, store: string | null) => void;
-  onAddItems?: (items: ParsedItem[]) => void;
+  onAddItems?: (data: AddItemsData) => void;
   onClose: () => void;
 }
 
@@ -86,11 +93,13 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
     if (!onAddItems || !imageData) return;
     const selectedItems = ocr.parsedItems.filter(item => item.selected);
     if (selectedItems.length > 0) {
-      // Save the receipt image (pass null as total so it doesn't add a "Kvitto" item)
-      onScanComplete(imageData, null, ocr.rawText, ocr.detectedStore);
-      
-      // Then add the individual items
-      onAddItems(selectedItems);
+      // Pass all data to parent - parent will save receipt and items
+      onAddItems({
+        items: selectedItems,
+        imageData,
+        rawText: ocr.rawText,
+        store: ocr.detectedStore,
+      });
     }
   };
 
