@@ -8,6 +8,7 @@ import React, {
   ReactNode,
 } from "react";
 import { gistStorage } from "../services/gist-storage";
+import { uploadReceiptImage, isDriveConfigured } from "../services/drive-storage";
 
 export interface GroceryItem {
   id: string;
@@ -600,16 +601,38 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({
   // Receipt functions
   const addReceipt = async (weekId: string, imageData: string, scannedTotal: number | null, rawText: string, store?: string) => {
     try {
-      // Compress image to reduce storage size (iOS Safari has ~5MB localStorage limit)
+      // Get existing receipts count for numbering
+      const week = weeks.find(w => w.weekId === weekId);
+      const receiptNumber = (week?.receipts?.length || 0) + 1;
+
       let finalImageData = '';
-      try {
-        const compressedImage = await compressImage(imageData);
-        console.log(`[Receipt] Original size: ${Math.round(imageData.length/1024)}KB, Compressed: ${Math.round(compressedImage.length/1024)}KB`);
-        finalImageData = compressedImage;
-      } catch (e) {
-        console.warn('[Receipt] Compression failed, skipping image:', e);
-        // Skip image if compression fails
-        finalImageData = '';
+
+      // Try uploading to Google Drive first (avoids localStorage limits)
+      if (isDriveConfigured() && imageData) {
+        console.log('[Receipt] Attempting Google Drive upload...');
+        try {
+          const driveUrl = await uploadReceiptImage(imageData, weekId, receiptNumber);
+          if (driveUrl) {
+            console.log('[Receipt] Saved to Google Drive:', driveUrl);
+            finalImageData = driveUrl; // Store the URL instead of base64
+          } else {
+            console.log('[Receipt] Drive upload failed, falling back to compression');
+          }
+        } catch (e) {
+          console.warn('[Receipt] Drive upload error:', e);
+        }
+      }
+
+      // Fallback: compress and store as base64 if Drive upload failed or not configured
+      if (!finalImageData && imageData) {
+        try {
+          const compressedImage = await compressImage(imageData);
+          console.log(`[Receipt] Compressed: ${Math.round(imageData.length/1024)}KB → ${Math.round(compressedImage.length/1024)}KB`);
+          finalImageData = compressedImage;
+        } catch (e) {
+          console.warn('[Receipt] Compression failed, skipping image:', e);
+          finalImageData = '';
+        }
       }
 
       const newReceipt: Receipt = {

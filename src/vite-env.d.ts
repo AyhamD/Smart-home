@@ -1,3 +1,14 @@
 /// <reference types="vite/client" />
-VITE_HUE_BRIDGE_IP="192.168.0.12"
-VITE_HUE_USERNAME="f7HDq06y3H463KUKZ8j7gKsinI1m9ChhdOMqqXva"
+
+interface ImportMetaEnv {
+  readonly VITE_HUE_BRIDGE_IP: string;
+  readonly VITE_HUE_USERNAME: string;
+  readonly VITE_MY_IP_ADDRESS: string;
+  readonly VITE_GIST_ID: string;
+  readonly VITE_GITHUB_TOKEN: string;
+  readonly VITE_DRIVE_SCRIPT_URL: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
