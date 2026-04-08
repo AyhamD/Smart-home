@@ -18,9 +18,21 @@
   </head>
   <body>
     <div id="root"></div>
-    <!-- Mobile Debug Console (Eruda) - remove after debugging -->
-    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-    <script>eruda.init();</script>
+    <!-- Mobile Debug Console -->
+    <script>
+      (function() {
+        var script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/eruda@3.0.1/eruda.min.js';
+        script.onload = function() { 
+          eruda.init(); 
+          console.log('Eruda loaded!');
+        };
+        script.onerror = function() {
+          alert('Debug tool failed to load');
+        };
+        document.body.appendChild(script);
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
