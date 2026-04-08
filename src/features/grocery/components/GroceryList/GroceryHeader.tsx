@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaShoppingCart, FaHome, FaWifi, FaSync, FaReceipt } from 'react-icons/fa';
+import { FaShoppingCart, FaHome, FaWifi, FaSync, FaReceipt, FaChartPie } from 'react-icons/fa';
 
 interface GroceryHeaderProps {
   isAtHome: boolean;
@@ -7,6 +7,7 @@ interface GroceryHeaderProps {
   onSync: () => void;
   receiptCount?: number;
   onOpenReceipts?: () => void;
+  onOpenCharts?: () => void;
 }
 
 export const GroceryHeader: React.FC<GroceryHeaderProps> = ({ 
@@ -15,6 +16,7 @@ export const GroceryHeader: React.FC<GroceryHeaderProps> = ({
   onSync,
   receiptCount = 0,
   onOpenReceipts,
+  onOpenCharts,
 }) => {
   return (
     <div className="grocery-header">
@@ -23,6 +25,15 @@ export const GroceryHeader: React.FC<GroceryHeaderProps> = ({
         <h2>Grocery List</h2>
       </div>
       <div className="header-actions">
+        {onOpenCharts && (
+          <button 
+            className="charts-btn"
+            onClick={onOpenCharts}
+            title="View spending analytics"
+          >
+            <FaChartPie />
+          </button>
+        )}
         {receiptCount > 0 && onOpenReceipts && (
           <button 
             className="receipts-btn"

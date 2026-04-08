@@ -18,6 +18,7 @@
 @use 'grocery-receipt-gallery' as *;
 @use 'receipt-scanner' as *;
 @use 'receipt-viewer' as *;
+@use 'spending-charts' as *;
 
 * {
   box-sizing: border-box;

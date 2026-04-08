@@ -23,6 +23,7 @@ export interface Receipt {
   imageData: string; // Base64 encoded image
   scannedTotal: number | null;
   rawText: string; // OCR extracted text
+  store?: string; // Detected store name
   addedAt: number;
 }
 
@@ -60,7 +61,7 @@ interface GroceryContextType {
   clearBought: (weekId: string) => void;
   getWeekTotal: (weekId: string) => number;
   // Receipt functions
-  addReceipt: (weekId: string, imageData: string, scannedTotal: number | null, rawText: string) => void;
+  addReceipt: (weekId: string, imageData: string, scannedTotal: number | null, rawText: string, store?: string) => void;
   removeReceipt: (weekId: string, receiptId: string) => void;
   // Budget functions
   currentBudget: MonthlyBudget | null;
@@ -385,10 +386,20 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({
     weekId: string,
     items: { name: string; price: number; quantity: number }[]
   ) => {
-    const newItems: GroceryItem[] = items.map((item, index) => ({
+    // Filter out invalid items
+    const validItems = items.filter(item => 
+      item.name && 
+      typeof item.price === 'number' && 
+      !isNaN(item.price) && 
+      item.price >= 0
+    );
+
+    if (validItems.length === 0) return;
+
+    const newItems: GroceryItem[] = validItems.map((item, index) => ({
       id: Date.now().toString() + index,
       name: item.name.trim(),
-      quantity: item.quantity,
+      quantity: item.quantity || 1,
       price: item.price,
       bought: true, // Scanned items are already bought
       createdAt: Date.now(),
@@ -478,26 +489,20 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({
     if (week.finalized && week.finalTotal !== undefined) {
       return week.finalTotal;
     }
-    // Sum items total
-    const itemsTotal = week.items
+    // Sum items total (receipts are added as items with name "Kvitto #X")
+    return week.items
       .filter((item) => item.bought && item.price !== null)
       .reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
-    
-    // Sum receipts total (for receipts without corresponding items)
-    const receiptsTotal = (week.receipts || [])
-      .filter(r => r.scannedTotal !== null && r.scannedTotal > 0)
-      .reduce((sum, r) => sum + (r.scannedTotal || 0), 0);
-    
-    return itemsTotal + receiptsTotal;
   };
 
   // Receipt functions
-  const addReceipt = (weekId: string, imageData: string, scannedTotal: number | null, rawText: string) => {
+  const addReceipt = (weekId: string, imageData: string, scannedTotal: number | null, rawText: string, store?: string) => {
     const newReceipt: Receipt = {
       id: Date.now().toString(),
       imageData,
       scannedTotal,
       rawText,
+      store,
       addedAt: Date.now(),
     };
 

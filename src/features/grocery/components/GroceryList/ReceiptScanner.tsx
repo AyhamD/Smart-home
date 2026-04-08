@@ -8,7 +8,7 @@ import { useReceiptOCR, ParsedItem } from '../../hooks/useReceiptOCR';
 export type { ParsedItem } from '../../hooks/useReceiptOCR';
 
 interface ReceiptScannerProps {
-  onScanComplete: (imageData: string, total: number | null, rawText: string) => void;
+  onScanComplete: (imageData: string, total: number | null, rawText: string, store: string | null) => void;
   onAddItems?: (items: ParsedItem[]) => void;
   onClose: () => void;
 }
@@ -68,14 +68,28 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
 
   const handleConfirmTotal = () => {
     if (!imageData) return;
-    const finalTotal = manualTotal ? parseFloat(manualTotal) : ocr.detectedTotal;
-    onScanComplete(imageData, finalTotal, ocr.rawText);
+    let finalTotal: number | null = null;
+    
+    if (manualTotal && manualTotal.trim() !== '') {
+      const parsed = parseFloat(manualTotal);
+      if (!isNaN(parsed)) {
+        finalTotal = parsed;
+      }
+    } else if (ocr.detectedTotal !== null) {
+      finalTotal = ocr.detectedTotal;
+    }
+    
+    onScanComplete(imageData, finalTotal, ocr.rawText, ocr.detectedStore);
   };
 
   const handleAddSelectedItems = () => {
-    if (!onAddItems) return;
+    if (!onAddItems || !imageData) return;
     const selectedItems = ocr.parsedItems.filter(item => item.selected);
     if (selectedItems.length > 0) {
+      // Save the receipt image (pass null as total so it doesn't add a "Kvitto" item)
+      onScanComplete(imageData, null, ocr.rawText, ocr.detectedStore);
+      
+      // Then add the individual items
       onAddItems(selectedItems);
     }
   };
@@ -216,6 +230,14 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
                 </div>
               ) : (
                 <div className="result-section">
+                  {/* Store detection badge */}
+                  {ocr.detectedStore && (
+                    <div className="store-badge">
+                      <span className="store-label">Store:</span>
+                      <span className="store-name">{ocr.detectedStore}</span>
+                    </div>
+                  )}
+
                   {/* Tab switcher */}
                   <div className="scanner-tabs">
                     <button 

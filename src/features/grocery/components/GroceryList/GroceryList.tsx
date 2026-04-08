@@ -6,6 +6,7 @@ import { GroceryHeader } from './GroceryHeader';
 import { BudgetSection } from './BudgetSection';
 import { AddItemForm } from './AddItemForm';
 import { AllReceiptsViewer } from './AllReceiptsViewer';
+import { SpendingCharts } from '../SpendingCharts/SpendingCharts';
 
 const GroceryList: React.FC = () => {
   const { 
@@ -21,6 +22,7 @@ const GroceryList: React.FC = () => {
   } = useGrocery();
 
   const [showReceiptsViewer, setShowReceiptsViewer] = useState(false);
+  const [showCharts, setShowCharts] = useState(false);
 
   const remainingBudget = getRemainingBudget();
   const isOverBudget = !!(currentBudget && currentBudget.totalBudget > 0 && remainingBudget <= 0);
@@ -41,6 +43,7 @@ const GroceryList: React.FC = () => {
         onSync={syncNow}
         receiptCount={totalReceiptCount}
         onOpenReceipts={() => setShowReceiptsViewer(true)}
+        onOpenCharts={() => setShowCharts(true)}
       />
 
       <BudgetSection
@@ -82,6 +85,12 @@ const GroceryList: React.FC = () => {
       <AllReceiptsViewer
         isOpen={showReceiptsViewer}
         onClose={() => setShowReceiptsViewer(false)}
+      />
+
+      {/* Spending Charts */}
+      <SpendingCharts
+        isOpen={showCharts}
+        onClose={() => setShowCharts(false)}
       />
     </div>
   );

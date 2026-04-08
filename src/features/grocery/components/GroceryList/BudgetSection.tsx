@@ -71,13 +71,32 @@ export const BudgetSection: React.FC<BudgetSectionProps> = ({
           </div>
         )}
       </div>
+      
+      {/* Budget Progress Bar */}
       {currentBudget && currentBudget.totalBudget > 0 && (
-        <div className={`budget-remaining ${isOverBudget ? 'over-budget' : ''}`}>
-          <span>Remaining: </span>
-          <span className="remaining-amount">{remainingBudget.toFixed(2)} kr</span>
-          {currentBudget.spent > 0 && (
-            <span className="spent-amount">(Spent: {currentBudget.spent.toFixed(2)} kr)</span>
-          )}
+        <div className="budget-progress">
+          <div className="progress-header">
+            <span className="progress-label">Budget Used</span>
+            <span className="progress-percent">
+              {Math.min(100, Math.round((currentBudget.spent / currentBudget.totalBudget) * 100))}%
+            </span>
+          </div>
+          <div className="progress-bar-container">
+            <div 
+              className={`progress-bar-fill ${isOverBudget ? 'over-budget' : currentBudget.spent / currentBudget.totalBudget > 0.8 ? 'warning' : ''}`}
+              style={{ width: `${Math.min(100, (currentBudget.spent / currentBudget.totalBudget) * 100)}%` }}
+            />
+          </div>
+          <div className="progress-labels">
+            <span className="spent-label">{currentBudget.spent.toFixed(0)} kr spent</span>
+            <span className="remaining-label">{remainingBudget.toFixed(0)} kr left</span>
+          </div>
+        </div>
+      )}
+      
+      {isOverBudget && (
+        <div className="budget-warning">
+          ⚠️ Over budget by {Math.abs(remainingBudget).toFixed(2)} kr
         </div>
       )}
     </div>

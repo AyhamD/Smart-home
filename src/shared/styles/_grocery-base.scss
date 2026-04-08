@@ -93,6 +93,25 @@
         padding: 0 4px;
       }
     }
+
+    .charts-btn {
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 50%;
+      background: rgba($primary, 0.15);
+      color: $primary;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      @include smooth-transition;
+      
+      &:hover {
+        background: rgba($primary, 0.25);
+        transform: scale(1.05);
+      }
+    }
     
     .sync-btn {
       width: 36px;

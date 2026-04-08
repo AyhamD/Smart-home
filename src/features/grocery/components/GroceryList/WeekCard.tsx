@@ -24,9 +24,26 @@ export const WeekCard: React.FC<WeekCardProps> = ({ week, isCurrentWeek }) => {
   const isFinalized = week.finalized;
   const receipts = week.receipts || [];
 
-  const handleScanComplete = (imageData: string, total: number | null, rawText: string) => {
-    addReceipt(week.weekId, imageData, total, rawText);
-    // Receipt total is now counted directly in getWeekTotal
+  const handleScanComplete = (imageData: string, total: number | null, rawText: string, store: string | null) => {
+    // Calculate receipt number based on existing receipts
+    const receiptNumber = (receipts.length || 0) + 1;
+    
+    // Only save receipt if we have image data
+    if (imageData) {
+      addReceipt(week.weekId, imageData, total, rawText, store || undefined);
+    }
+    
+    // Add the total as a bought item so it shows in the list
+    if (total !== null && !isNaN(total) && total > 0) {
+      const itemName = store 
+        ? `Kvitto #${receiptNumber} (${store})`
+        : `Kvitto #${receiptNumber}`;
+      addScannedItems(week.weekId, [{
+        name: itemName,
+        price: total,
+        quantity: 1,
+      }]);
+    }
     setShowScanner(false);
   };
 

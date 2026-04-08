@@ -14,9 +14,11 @@ interface UseReceiptOCRResult {
   progress: number;
   rawText: string;
   detectedTotal: number | null;
+  detectedStore: string | null;
   parsedItems: ParsedItem[];
   performOCR: (imageDataUrl: string) => Promise<void>;
   setDetectedTotal: React.Dispatch<React.SetStateAction<number | null>>;
+  setDetectedStore: React.Dispatch<React.SetStateAction<string | null>>;
   setParsedItems: React.Dispatch<React.SetStateAction<ParsedItem[]>>;
   resetOCR: () => void;
 }
@@ -168,11 +170,58 @@ const parseTotal = (text: string): number | null => {
   return maxAmount > 0 ? maxAmount : null;
 };
 
+// Swedish store detection patterns
+const STORE_PATTERNS: { name: string; patterns: RegExp[] }[] = [
+  { name: 'ICA', patterns: [/\bICA\b/i, /ICA\s*(MAXI|NÄRA|SUPERMARKET|KVANTUM)/i] },
+  { name: 'Coop', patterns: [/\bCOOP\b/i, /COOP\s*(FORUM|EXTRA|KONSUM)/i] },
+  { name: 'Willys', patterns: [/\bWILLYS\b/i, /WILLYS\s*HEMMA/i] },
+  { name: 'Hemköp', patterns: [/\bHEMKÖP\b/i, /HEMK[OÖ]P/i] },
+  { name: 'Lidl', patterns: [/\bLIDL\b/i] },
+  { name: 'City Gross', patterns: [/CITY\s*GROSS/i, /CITYGROSS/i] },
+  { name: 'Netto', patterns: [/\bNETTO\b/i] },
+  { name: 'Mathem', patterns: [/\bMATHEM\b/i] },
+  { name: 'Eko', patterns: [/\bEKO\b/i, /EKOH[AÅ]LLET/i] },
+  { name: 'Åhléns', patterns: [/\b[AÅ]HL[EÉ]NS\b/i] },
+  { name: 'Pressbyrån', patterns: [/PRESSBYR[AÅ]N/i] },
+  { name: '7-Eleven', patterns: [/7[-\s]?ELEVEN/i, /SEVEN[-\s]?ELEVEN/i] },
+  { name: 'MAX', patterns: [/\bMAX\s*HAMBURGER/i, /\bMAX\s*BURGERS?\b/i] },
+  { name: 'McDonald\'s', patterns: [/MC\s*DONALD/i, /MCDONALD/i] },
+  { name: 'Espresso House', patterns: [/ESPRESSO\s*HOUSE/i] },
+];
+
+// Detect store name from receipt text
+const parseStore = (text: string): string | null => {
+  const upperText = text.toUpperCase();
+  
+  // Check first 10 lines for store name (usually at the top)
+  const firstLines = text.split('\n').slice(0, 15).join('\n').toUpperCase();
+  
+  for (const store of STORE_PATTERNS) {
+    for (const pattern of store.patterns) {
+      if (pattern.test(firstLines)) {
+        return store.name;
+      }
+    }
+  }
+  
+  // Fallback: check entire text
+  for (const store of STORE_PATTERNS) {
+    for (const pattern of store.patterns) {
+      if (pattern.test(upperText)) {
+        return store.name;
+      }
+    }
+  }
+  
+  return null;
+};
+
 export function useReceiptOCR(): UseReceiptOCRResult {
   const [scanning, setScanning] = useState(false);
   const [progress, setProgress] = useState(0);
   const [rawText, setRawText] = useState('');
   const [detectedTotal, setDetectedTotal] = useState<number | null>(null);
+  const [detectedStore, setDetectedStore] = useState<string | null>(null);
   const [parsedItems, setParsedItems] = useState<ParsedItem[]>([]);
 
   const performOCR = useCallback(async (imageDataUrl: string) => {
@@ -206,6 +255,9 @@ export function useReceiptOCR(): UseReceiptOCRResult {
       const total = parseTotal(text);
       setDetectedTotal(total);
 
+      const store = parseStore(text);
+      setDetectedStore(store);
+
       const items = parseItems(text);
       setParsedItems(items);
     } catch (error) {
@@ -219,6 +271,7 @@ export function useReceiptOCR(): UseReceiptOCRResult {
   const resetOCR = useCallback(() => {
     setRawText('');
     setDetectedTotal(null);
+    setDetectedStore(null);
     setParsedItems([]);
     setProgress(0);
   }, []);
@@ -228,9 +281,11 @@ export function useReceiptOCR(): UseReceiptOCRResult {
     progress,
     rawText,
     detectedTotal,
+    detectedStore,
     parsedItems,
     performOCR,
     setDetectedTotal,
+    setDetectedStore,
     setParsedItems,
     resetOCR,
   };
