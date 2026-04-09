@@ -73,26 +73,32 @@ export const BudgetSection: React.FC<BudgetSectionProps> = ({
       </div>
       
       {/* Budget Progress Bar */}
-      {currentBudget && currentBudget.totalBudget > 0 && (
-        <div className="budget-progress">
-          <div className="progress-header">
-            <span className="progress-label">Budget Used</span>
-            <span className="progress-percent">
-              {Math.min(100, Math.round((currentBudget.spent / currentBudget.totalBudget) * 100))}%
-            </span>
+      {currentBudget && currentBudget.totalBudget > 0 && (() => {
+        // Calculate actual spent including non-finalized weeks
+        const actualSpent = currentBudget.totalBudget - remainingBudget;
+        const spentPercent = Math.min(100, Math.round((actualSpent / currentBudget.totalBudget) * 100));
+        
+        return (
+          <div className="budget-progress">
+            <div className="progress-header">
+              <span className="progress-label">Budget Used</span>
+              <span className="progress-percent">
+                {spentPercent}%
+              </span>
+            </div>
+            <div className="progress-bar-container">
+              <div 
+                className={`progress-bar-fill ${isOverBudget ? 'over-budget' : actualSpent / currentBudget.totalBudget > 0.8 ? 'warning' : ''}`}
+                style={{ width: `${Math.min(100, (actualSpent / currentBudget.totalBudget) * 100)}%` }}
+              />
+            </div>
+            <div className="progress-labels">
+              <span className="spent-label">{actualSpent.toFixed(0)} kr spent</span>
+              <span className="remaining-label">{remainingBudget.toFixed(0)} kr left</span>
+            </div>
           </div>
-          <div className="progress-bar-container">
-            <div 
-              className={`progress-bar-fill ${isOverBudget ? 'over-budget' : currentBudget.spent / currentBudget.totalBudget > 0.8 ? 'warning' : ''}`}
-              style={{ width: `${Math.min(100, (currentBudget.spent / currentBudget.totalBudget) * 100)}%` }}
-            />
-          </div>
-          <div className="progress-labels">
-            <span className="spent-label">{currentBudget.spent.toFixed(0)} kr spent</span>
-            <span className="remaining-label">{remainingBudget.toFixed(0)} kr left</span>
-          </div>
-        </div>
-      )}
+        );
+      })()}
       
       {isOverBudget && (
         <div className="budget-warning">
