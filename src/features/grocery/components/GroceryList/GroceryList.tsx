@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { useGrocery } from '../../context/GroceryContext';
 import { FaShoppingCart } from 'react-icons/fa';
 import { WeekCard } from './WeekCard';
@@ -7,6 +8,7 @@ import { BudgetSection } from './BudgetSection';
 import { AddItemForm } from './AddItemForm';
 import { AllReceiptsViewer } from './AllReceiptsViewer';
 import { SpendingCharts } from '../SpendingCharts/SpendingCharts';
+import { SmartSuggestions } from '../SmartSuggestions';
 
 const GroceryList: React.FC = () => {
   const { 
@@ -23,6 +25,7 @@ const GroceryList: React.FC = () => {
 
   const [showReceiptsViewer, setShowReceiptsViewer] = useState(false);
   const [showCharts, setShowCharts] = useState(false);
+  const [showSmart, setShowSmart] = useState(false);
 
   const remainingBudget = getRemainingBudget();
   const isOverBudget = !!(currentBudget && currentBudget.totalBudget > 0 && remainingBudget <= 0);
@@ -44,6 +47,8 @@ const GroceryList: React.FC = () => {
         receiptCount={totalReceiptCount}
         onOpenReceipts={() => setShowReceiptsViewer(true)}
         onOpenCharts={() => setShowCharts(true)}
+        onOpenSmart={() => setShowSmart(!showSmart)}
+        smartActive={showSmart}
       />
 
       <BudgetSection
@@ -52,6 +57,13 @@ const GroceryList: React.FC = () => {
         isOverBudget={isOverBudget}
         onSaveBudget={setBudget}
       />
+
+      {/* Smart Suggestions Panel */}
+      <AnimatePresence>
+        {showSmart && (
+          <SmartSuggestions onClose={() => setShowSmart(false)} />
+        )}
+      </AnimatePresence>
 
       <AddItemForm
         isOverBudget={isOverBudget}

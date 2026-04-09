@@ -9,6 +9,7 @@ import React, {
 } from "react";
 import { gistStorage } from "../services/gist-storage";
 import { uploadReceiptImage, isDriveConfigured, deleteReceiptImage, isDriveUrl } from "../services/drive-storage";
+import { ItemCategory, detectCategory } from "../hooks/useSmartFeatures";
 
 export interface GroceryItem {
   id: string;
@@ -17,6 +18,7 @@ export interface GroceryItem {
   price: number | null; // Price per item (null if not set)
   bought: boolean;
   createdAt: number;
+  category?: ItemCategory; // Auto-detected category
 }
 
 export interface Receipt {
@@ -456,6 +458,7 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({
       price,
       bought: false,
       createdAt: Date.now(),
+      category: detectCategory(name),
     };
 
     const currentWeekData = getCurrentWeekData();
@@ -506,6 +509,7 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({
       price: item.price,
       bought: true, // Scanned items are already bought
       createdAt: Date.now(),
+      category: detectCategory(item.name),
     }));
 
     setWeeks((prev) => {
