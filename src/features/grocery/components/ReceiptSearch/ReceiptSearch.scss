@@ -3,25 +3,29 @@
 .receipt-search-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   padding: 1rem;
+  overflow: hidden;
+  touch-action: none;
 }
 
 .receipt-search-modal {
-  background: $background-card;
+  background: $background-dark;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 1rem;
   width: 100%;
-  max-width: 600px;
-  max-height: 80vh;
+  max-width: 500px;
+  max-height: 70vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  touch-action: auto;
 }
 
 .receipt-search-header {
@@ -285,10 +289,17 @@
 }
 
 @media (max-width: 480px) {
+  .receipt-search-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
   .receipt-search-modal {
-    max-height: 90vh;
-    border-radius: 1rem 1rem 0 0;
+    max-height: 85vh;
+    border-radius: 1.5rem 1.5rem 0 0;
     margin-top: auto;
+    width: 100%;
+    max-width: 100%;
   }
   
   .receipt-preview {

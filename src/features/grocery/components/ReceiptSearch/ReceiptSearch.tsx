@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGrocery } from '../../context/GroceryContext';
 import { searchReceipts, SearchResult } from '../../hooks/useDataExport';
@@ -14,6 +14,25 @@ const ReceiptSearch = ({ onClose, onSelectReceipt }: ReceiptSearchProps) => {
   const { weeks } = useGrocery();
   const [query, setQuery] = useState('');
   const [selectedResult, setSelectedResult] = useState<SearchResult | null>(null);
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    const scrollY = window.scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.overflow = 'hidden';
+    
+    return () => {
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.overflow = '';
+      window.scrollTo(0, scrollY);
+    };
+  }, []);
 
   const results = useMemo(() => {
     return searchReceipts(weeks, query);
