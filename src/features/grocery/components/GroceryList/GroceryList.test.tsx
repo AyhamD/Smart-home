@@ -1,6 +1,17 @@
 // GroceryList.test.tsx
+import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+
+// Mock ToastContext
+jest.mock("../../../../shared/context/ToastContext", () => ({
+  useToast: () => ({
+    showSuccess: jest.fn(),
+    showError: jest.fn(),
+    showWarning: jest.fn(),
+    showInfo: jest.fn(),
+  }),
+}));
 
 jest.mock("../../context/GroceryContext", () => ({
   useGrocery: jest.fn(),

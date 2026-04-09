@@ -16,11 +16,13 @@ interface UseReceiptOCRResult {
   detectedTotal: number | null;
   detectedStore: string | null;
   parsedItems: ParsedItem[];
+  error: string | null;
   performOCR: (imageDataUrl: string) => Promise<void>;
   setDetectedTotal: React.Dispatch<React.SetStateAction<number | null>>;
   setDetectedStore: React.Dispatch<React.SetStateAction<string | null>>;
   setParsedItems: React.Dispatch<React.SetStateAction<ParsedItem[]>>;
   resetOCR: () => void;
+  clearError: () => void;
 }
 
 // Preprocess image for better OCR
@@ -223,10 +225,14 @@ export function useReceiptOCR(): UseReceiptOCRResult {
   const [detectedTotal, setDetectedTotal] = useState<number | null>(null);
   const [detectedStore, setDetectedStore] = useState<string | null>(null);
   const [parsedItems, setParsedItems] = useState<ParsedItem[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  const clearError = useCallback(() => setError(null), []);
 
   const performOCR = useCallback(async (imageDataUrl: string) => {
     setScanning(true);
     setProgress(0);
+    setError(null);
 
     try {
       // Preprocess image for better OCR (but don't change the displayed image)
@@ -260,9 +266,10 @@ export function useReceiptOCR(): UseReceiptOCRResult {
 
       const items = parseItems(text);
       setParsedItems(items);
-    } catch (error) {
-      console.error('OCR failed:', error);
-      setRawText('OCR failed - please enter items manually');
+    } catch (err) {
+      console.error('OCR failed:', err);
+      setError('OCR failed - please enter items manually');
+      setRawText('');
     } finally {
       setScanning(false);
     }
@@ -274,6 +281,7 @@ export function useReceiptOCR(): UseReceiptOCRResult {
     setDetectedStore(null);
     setParsedItems([]);
     setProgress(0);
+    setError(null);
   }, []);
 
   return {
@@ -283,10 +291,12 @@ export function useReceiptOCR(): UseReceiptOCRResult {
     detectedTotal,
     detectedStore,
     parsedItems,
+    error,
     performOCR,
     setDetectedTotal,
     setDetectedStore,
     setParsedItems,
     resetOCR,
+    clearError,
   };
 }

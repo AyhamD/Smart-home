@@ -1,8 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { FaCamera, FaReceipt, FaSpinner, FaTimes, FaCheck, FaEdit, FaPlus, FaTrash, FaShoppingCart, FaImage, FaSyncAlt } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCamera } from '../../hooks/useCamera';
 import { useReceiptOCR, ParsedItem } from '../../hooks/useReceiptOCR';
+import { useToast } from '../../../../shared/context/ToastContext';
 
 // Re-export ParsedItem for backwards compatibility
 export type { ParsedItem } from '../../hooks/useReceiptOCR';
@@ -35,6 +36,22 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
   // Use custom hooks
   const camera = useCamera();
   const ocr = useReceiptOCR();
+  const { showError, showWarning } = useToast();
+
+  // Show toast on OCR error
+  useEffect(() => {
+    if (ocr.error) {
+      showError(ocr.error);
+      ocr.clearError();
+    }
+  }, [ocr.error, showError, ocr]);
+
+  // Show warning if no items detected after scanning
+  useEffect(() => {
+    if (!ocr.scanning && ocr.rawText && ocr.parsedItems.length === 0 && !ocr.error) {
+      showWarning('No items detected. Try adding items manually.');
+    }
+  }, [ocr.scanning, ocr.rawText, ocr.parsedItems.length, ocr.error, showWarning]);
 
   // Handle photo capture
   const handleCapturePhoto = () => {
@@ -47,14 +64,14 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
   };
 
   // Update manual total when detected total changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (ocr.detectedTotal !== null) {
       setManualTotal(ocr.detectedTotal.toFixed(2));
     }
   }, [ocr.detectedTotal]);
 
   // Set active tab to items when items are parsed
-  React.useEffect(() => {
+  useEffect(() => {
     if (ocr.parsedItems.length > 0) {
       setActiveTab('items');
     }

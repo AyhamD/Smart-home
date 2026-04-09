@@ -11,6 +11,7 @@ import { SpendingCharts } from '../SpendingCharts/SpendingCharts';
 import { SmartSuggestions } from '../SmartSuggestions';
 import ReceiptSearch from '../ReceiptSearch/ReceiptSearch';
 import { exportToCSV, shareSpendingSummary } from '../../hooks/useDataExport';
+import { useToast } from '../../../../shared/context/ToastContext';
 
 const GroceryList: React.FC = () => {
   const { 
@@ -25,6 +26,8 @@ const GroceryList: React.FC = () => {
     setBudget,
     getRemainingBudget,
   } = useGrocery();
+  
+  const { showSuccess, showError, showInfo } = useToast();
 
   const [showReceiptsViewer, setShowReceiptsViewer] = useState(false);
   const [showCharts, setShowCharts] = useState(false);
@@ -42,17 +45,38 @@ const GroceryList: React.FC = () => {
   // Sort weeks by date (newest first)
   const sortedWeeks = [...weeks].sort((a, b) => b.weekId.localeCompare(a.weekId));
 
+  // Sync handler with toast feedback
+  const handleSync = async () => {
+    try {
+      await syncNow();
+      showSuccess('Synced successfully!');
+    } catch {
+      showError('Sync failed. Please try again.');
+    }
+  };
+
   // Export handler
   const handleExport = () => {
-    const filename = `grocery-data-${new Date().toISOString().slice(0, 10)}`;
-    exportToCSV(weeks, budgets, filename);
+    try {
+      const filename = `grocery-data-${new Date().toISOString().slice(0, 10)}`;
+      exportToCSV(weeks, budgets, filename);
+      showSuccess('Data exported to CSV');
+    } catch {
+      showError('Export failed');
+    }
   };
 
   // Share handler
   const handleShare = async () => {
-    const success = await shareSpendingSummary(weeks, budgets);
-    if (!success) {
-      alert('Could not share. Summary copied to clipboard instead.');
+    try {
+      const success = await shareSpendingSummary(weeks, budgets);
+      if (success) {
+        showSuccess('Summary shared!');
+      } else {
+        showInfo('Summary copied to clipboard');
+      }
+    } catch {
+      showError('Could not share summary');
     }
   };
 
@@ -61,7 +85,7 @@ const GroceryList: React.FC = () => {
       <GroceryHeader 
         isAtHome={isAtHome}
         syncing={syncing}
-        onSync={syncNow}
+        onSync={handleSync}
         receiptCount={totalReceiptCount}
         onOpenReceipts={() => setShowReceiptsViewer(true)}
         onOpenCharts={() => setShowCharts(true)}

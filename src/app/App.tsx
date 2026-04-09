@@ -12,30 +12,35 @@ import GroupDetail from "../features/hue/pages/GroupDetail";
 import { BluetoothProvider } from "../features/hue/context/BluetoothContext";
 import { GroceryProvider } from "../features/grocery/context/GroceryContext";
 import { HueAuthProvider } from "../features/hue/context/HueAuthContext";
+import { ToastProvider } from "../shared/context/ToastContext";
+import { ToastContainer } from "../shared/components/Toast";
 
 const App = () => {
   return (
-    <WeatherProvider>
-      <ImagesProvider>
-        <BluetoothProvider>
-          <GroceryProvider>
-            <HueAuthProvider>
-              <BrowserRouter>
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/setup" element={<BridgeSetup />} />
-                  <Route path="/oauth/callback" element={<OAuthCallback />} />
-                  <Route
-                    path="/lights/:groupId"
-                    element={<GroupDetail />}
-                  />
-                </Routes>
-              </BrowserRouter>
-            </HueAuthProvider>
-          </GroceryProvider>
-        </BluetoothProvider>
-      </ImagesProvider>
-    </WeatherProvider>
+    <ToastProvider>
+      <WeatherProvider>
+        <ImagesProvider>
+          <BluetoothProvider>
+            <GroceryProvider>
+              <HueAuthProvider>
+                <BrowserRouter>
+                  <Routes>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/setup" element={<BridgeSetup />} />
+                    <Route path="/oauth/callback" element={<OAuthCallback />} />
+                    <Route
+                      path="/lights/:groupId"
+                      element={<GroupDetail />}
+                    />
+                  </Routes>
+                </BrowserRouter>
+              </HueAuthProvider>
+            </GroceryProvider>
+          </BluetoothProvider>
+        </ImagesProvider>
+      </WeatherProvider>
+      <ToastContainer />
+    </ToastProvider>
   );
 };
 
