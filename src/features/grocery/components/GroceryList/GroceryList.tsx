@@ -9,10 +9,13 @@ import { AddItemForm } from './AddItemForm';
 import { AllReceiptsViewer } from './AllReceiptsViewer';
 import { SpendingCharts } from '../SpendingCharts/SpendingCharts';
 import { SmartSuggestions } from '../SmartSuggestions';
+import ReceiptSearch from '../ReceiptSearch/ReceiptSearch';
+import { exportToCSV, shareSpendingSummary } from '../../hooks/useDataExport';
 
 const GroceryList: React.FC = () => {
   const { 
     weeks, 
+    budgets,
     currentWeek, 
     addItem, 
     isAtHome, 
@@ -20,12 +23,13 @@ const GroceryList: React.FC = () => {
     syncNow,
     currentBudget,
     setBudget,
-    getRemainingBudget 
+    getRemainingBudget,
   } = useGrocery();
 
   const [showReceiptsViewer, setShowReceiptsViewer] = useState(false);
   const [showCharts, setShowCharts] = useState(false);
   const [showSmart, setShowSmart] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
 
   const remainingBudget = getRemainingBudget();
   const isOverBudget = !!(currentBudget && currentBudget.totalBudget > 0 && remainingBudget <= 0);
@@ -38,6 +42,20 @@ const GroceryList: React.FC = () => {
   // Sort weeks by date (newest first)
   const sortedWeeks = [...weeks].sort((a, b) => b.weekId.localeCompare(a.weekId));
 
+  // Export handler
+  const handleExport = () => {
+    const filename = `grocery-data-${new Date().toISOString().slice(0, 10)}`;
+    exportToCSV(weeks, budgets, filename);
+  };
+
+  // Share handler
+  const handleShare = async () => {
+    const success = await shareSpendingSummary(weeks, budgets);
+    if (!success) {
+      alert('Could not share. Summary copied to clipboard instead.');
+    }
+  };
+
   return (
     <div className="grocery-list">
       <GroceryHeader 
@@ -49,6 +67,9 @@ const GroceryList: React.FC = () => {
         onOpenCharts={() => setShowCharts(true)}
         onOpenSmart={() => setShowSmart(!showSmart)}
         smartActive={showSmart}
+        onOpenSearch={() => setShowSearch(true)}
+        onExport={handleExport}
+        onShare={handleShare}
       />
 
       <BudgetSection
@@ -104,6 +125,15 @@ const GroceryList: React.FC = () => {
         isOpen={showCharts}
         onClose={() => setShowCharts(false)}
       />
+
+      {/* Receipt Search */}
+      <AnimatePresence>
+        {showSearch && (
+          <ReceiptSearch
+            onClose={() => setShowSearch(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

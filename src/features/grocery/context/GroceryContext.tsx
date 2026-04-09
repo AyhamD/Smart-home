@@ -55,6 +55,7 @@ export interface GroceryData {
 
 interface GroceryContextType {
   weeks: GroceryWeek[];
+  budgets: MonthlyBudget[];
   currentWeek: GroceryWeek | null;
   addItem: (name: string, quantity?: number, price?: number | null) => void;
   addScannedItems: (weekId: string, items: { name: string; price: number; quantity: number }[]) => void;
@@ -755,6 +756,7 @@ export const GroceryProvider: React.FC<{ children: ReactNode }> = ({
     <GroceryContext.Provider
       value={{
         weeks,
+        budgets,
         currentWeek,
         addItem,
         addScannedItems,

@@ -92,6 +92,66 @@
       }
     }
 
+    .search-btn {
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(#2196f3, 0.15);
+      color: #2196f3;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      @include smooth-transition;
+      
+      &:hover {
+        background: rgba(#2196f3, 0.25);
+        transform: scale(1.05);
+      }
+    }
+
+    .export-btn {
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(#4caf50, 0.15);
+      color: #4caf50;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      @include smooth-transition;
+      
+      &:hover {
+        background: rgba(#4caf50, 0.25);
+        transform: scale(1.05);
+      }
+    }
+
+    .share-btn {
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(#e91e63, 0.15);
+      color: #e91e63;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      @include smooth-transition;
+      
+      &:hover {
+        background: rgba(#e91e63, 0.25);
+        transform: scale(1.05);
+      }
+    }
+
     .receipts-btn {
       position: relative;
       width: 36px;

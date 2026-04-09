@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaShoppingCart, FaHome, FaWifi, FaSync, FaReceipt, FaChartPie, FaBrain } from 'react-icons/fa';
+import { FaShoppingCart, FaHome, FaWifi, FaSync, FaReceipt, FaChartPie, FaBrain, FaSearch, FaDownload, FaShareAlt } from 'react-icons/fa';
 
 interface GroceryHeaderProps {
   isAtHome: boolean;
@@ -10,6 +10,9 @@ interface GroceryHeaderProps {
   onOpenCharts?: () => void;
   onOpenSmart?: () => void;
   smartActive?: boolean;
+  onOpenSearch?: () => void;
+  onExport?: () => void;
+  onShare?: () => void;
 }
 
 export const GroceryHeader: React.FC<GroceryHeaderProps> = ({ 
@@ -21,6 +24,9 @@ export const GroceryHeader: React.FC<GroceryHeaderProps> = ({
   onOpenCharts,
   onOpenSmart,
   smartActive = false,
+  onOpenSearch,
+  onExport,
+  onShare,
 }) => {
   return (
     <div className="grocery-header">
@@ -29,6 +35,33 @@ export const GroceryHeader: React.FC<GroceryHeaderProps> = ({
         <h2>Grocery List</h2>
       </div>
       <div className="header-actions">
+        {onOpenSearch && (
+          <button 
+            className="search-btn"
+            onClick={onOpenSearch}
+            title="Search receipts"
+          >
+            <FaSearch />
+          </button>
+        )}
+        {onExport && (
+          <button 
+            className="export-btn"
+            onClick={onExport}
+            title="Export data"
+          >
+            <FaDownload />
+          </button>
+        )}
+        {onShare && (
+          <button 
+            className="share-btn"
+            onClick={onShare}
+            title="Share summary"
+          >
+            <FaShareAlt />
+          </button>
+        )}
         {onOpenSmart && (
           <button 
             className={`smart-btn ${smartActive ? 'active' : ''}`}
