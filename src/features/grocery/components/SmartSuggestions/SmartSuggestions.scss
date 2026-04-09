@@ -137,7 +137,7 @@
       
       &:hover:not(:disabled) {
         transform: scale(1.1);
-        background: lighten($primary, 10%);
+        background: $primary-light;
       }
       
       &.added {
@@ -269,7 +269,7 @@
       justify-content: center;
       
       &:hover {
-        background: lighten($primary, 10%);
+        background: $primary-light;
       }
     }
   }

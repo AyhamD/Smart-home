@@ -278,7 +278,7 @@
       cursor: pointer;
       
       &:hover {
-        background: lighten($primary, 10%);
+        background: $primary-light;
       }
     }
   }
