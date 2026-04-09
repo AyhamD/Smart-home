@@ -17,6 +17,7 @@ const mockUseGrocery = useGrocery as jest.Mock;
 beforeEach(() => {
   mockUseGrocery.mockReturnValue({
     weeks: [],
+    budgets: [],
     currentWeek: { weekId: "2026-W13", items: [] },
     addItem: jest.fn(),
     removeItem: jest.fn(),
@@ -24,6 +25,9 @@ beforeEach(() => {
     isAtHome: true,
     syncing: false,
     syncNow: jest.fn(),
+    currentBudget: null,
+    setBudget: jest.fn(),
+    getRemainingBudget: jest.fn().mockReturnValue(0),
   });
 });
 
@@ -54,6 +58,7 @@ it("adds item when form is submitted", async () => {
   const mockAddItem = jest.fn();
   mockUseGrocery.mockReturnValue({
     weeks: [],
+    budgets: [],
     currentWeek: { weekId: "2026-W13", items: [] },
     addItem: mockAddItem,
     removeItem: jest.fn(),
@@ -61,6 +66,9 @@ it("adds item when form is submitted", async () => {
     isAtHome: true,
     syncing: false,
     syncNow: jest.fn(),
+    currentBudget: null,
+    setBudget: jest.fn(),
+    getRemainingBudget: jest.fn().mockReturnValue(0),
   });
 
   const user = userEvent.setup();
@@ -88,6 +96,7 @@ it("toggles item as bought when clicked", async () => {
   
   mockUseGrocery.mockReturnValue({
     weeks: [weekWithItem],
+    budgets: [],
     currentWeek: weekWithItem,
     addItem: jest.fn(),
     removeItem: jest.fn(),
@@ -98,6 +107,9 @@ it("toggles item as bought when clicked", async () => {
     isAtHome: true,
     syncing: false,
     syncNow: jest.fn(),
+    currentBudget: null,
+    setBudget: jest.fn(),
+    getRemainingBudget: jest.fn().mockReturnValue(0),
   });
 
   const user = userEvent.setup();
@@ -112,6 +124,7 @@ it("syncs when sync button is clicked", async () => {
   const mockSyncNow = jest.fn();
   mockUseGrocery.mockReturnValue({
     weeks: [],
+    budgets: [],
     currentWeek: { weekId: "2026-W13", items: [] },
     addItem: jest.fn(),
     removeItem: jest.fn(),
@@ -119,6 +132,9 @@ it("syncs when sync button is clicked", async () => {
     isAtHome: true,
     syncing: false,
     syncNow: mockSyncNow,
+    currentBudget: null,
+    setBudget: jest.fn(),
+    getRemainingBudget: jest.fn().mockReturnValue(0),
   });
 
   const user = userEvent.setup();

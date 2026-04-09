@@ -114,7 +114,7 @@ describe("WeekCard", () => {
       const week = createMockWeek();
       render(<WeekCard week={week} isCurrentWeek={false} />);
       
-      expect(screen.getByText("€15.99")).toBeInTheDocument();
+      expect(screen.getByText("15.99 kr")).toBeInTheDocument();
     });
   });
 
